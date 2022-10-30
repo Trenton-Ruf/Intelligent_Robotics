@@ -1,0 +1,9 @@
+[submodule "catkin_ws/src/rosflight"]
+	path = catkin_ws/src/rosflight
+	url = https://github.com/rosflight/rosflight.git
+[submodule "catkin_ws/src/catkin_ws/src/rosflight_joy"]
+	path = catkin_ws/src/catkin_ws/src/rosflight_joy
+	url = https://github.com/rosflight/rosflight_joy.git
+[submodule "catkin_ws/src/rosflight_joy"]
+	path = catkin_ws/src/rosflight_joy
+	url = https://github.com/rosflight/rosflight_joy.git
