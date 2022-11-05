@@ -43,13 +43,14 @@ ki = ctrl.Consequent(np.linspace(0 ,0.00015,7), 'ki')
 
 """
 # Functional
+#error = ctrl.Antecedent(np.linspace(-5,5,7), 'error')
 kp = ctrl.Consequent(np.linspace(0 ,0.00075,7), 'kp')
 kd = ctrl.Consequent(np.linspace(0 ,0.0055,7), 'kd')
 ki = ctrl.Consequent(np.linspace(0 ,0.00015,7), 'ki')
 """
-kp = ctrl.Consequent(np.linspace(-0.0075,0.0075,7), 'kp')
-kd = ctrl.Consequent(np.linspace(-0.0055,0.0055,7), 'kd')
-ki = ctrl.Consequent(np.linspace(-0.0015,0.0015,7), 'ki')
+kp = ctrl.Consequent(np.linspace(-0.000000,0.01,7), 'kp')
+kd = ctrl.Consequent(np.linspace(-0.000000,0.02,7), 'kd')
+ki = ctrl.Consequent(np.linspace(-0.000000,0.01,7), 'ki')
 
 # Fuzzy Terms
 names = ['nb', 'nm', 'ns', 'zo', 'ps', 'pm', 'pb']
@@ -264,17 +265,12 @@ system = ctrl.ControlSystem(rules=[
 #Maybe set clip_to_bounds=False to not limit output to universe
 sim = ctrl.ControlSystemSimulation(system, flush_after_run=1000) # lower flush if memory is scarce
 
-altCount=0
-altitudeSum=0
+altList=[]
 def altimeterFilter(baro):
-    global altCount 
-    global altitudeSum 
-    altitudeSum += baro.altitude
-    altCount += 1
-    if altCount > 2:
-        avgAltitude = altitudeSum/altCount
-        altitudeSum = 0
-        altCount = 0
+    altList.insert(0,baro.altitude)
+    if len(altList) > 3:
+        altList.pop()
+        avgAltitude = sum(altList) / float(len(altList))
         altitudePID(avgAltitude)
 
 
@@ -287,7 +283,7 @@ def altitudePID(altitude):
 
     # Get error and delta
     pidError= altitudeSetpoint - altitude 
-    pidDelta = (pidError - lastPidError)/(endTime - startTime) 
+    pidDelta = float(pidError - lastPidError)/float(endTime - startTime)
     lastPidError = pidError
 
     endTime = startTime
@@ -304,7 +300,7 @@ def altitudePID(altitude):
                     )
 
     msg.header.stamp = rospy.Time.now()
-    msg.F = 0.7        #Throttle (0,1)
+    msg.F = 1.0        #Throttle (0,1)
     msg.y = pid(altitude) 
     publisher.publish(msg)
     rospy.loginfo("Altitude:"+str(round(altitude, 4)) + 
