@@ -2,23 +2,21 @@
 import os
 # I don't have an NVidia GPU :(
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying Tensorflow warnings
-import tensorflow as tf
 import keras
 from keras.models import Sequential 
 from keras.layers import Dense, Dropout, Flatten 
 from keras.layers import Conv2D, MaxPooling2D 
+from keras.layers import Rescaling
+from keras.layers import RandomRotation
 
-def pre_process(image,label):
-    image = tf.cast(image/255. ,tf.float32)
-    return image,label
+IMG_SIZE = 100
 
 face_ds = keras.utils.image_dataset_from_directory(
     directory='./dataset',
     labels='inferred',
     label_mode='categorical', # catagorical for catagorical_crossentropy 
-    #label_mode='int', #for sparse_catagorical_crossentropy
-    batch_size=32, # maybe None
-    image_size=(100, 100),
+    batch_size=32, 
+    image_size=(IMG_SIZE, IMG_SIZE),
     shuffle=True,
     seed=3,
     validation_split=0.2,
@@ -26,13 +24,19 @@ face_ds = keras.utils.image_dataset_from_directory(
 )
 train_ds, validation_ds = face_ds
 
-train_ds = train_ds.map(pre_process)
-validation_ds = validation_ds.map(pre_process)
+data_augment = Sequential([
+    RandomRotation(factor=(0.05), fill_mode="nearest")
+    #might add more, but not image fliping because it needs to know if right or left eyebrow raised
+    ])
+
+data_rescale=Sequential([Rescaling(1./255)])
 
 batch_size=32
-input_shape=(100, 100, 3) # 100x100 RGB
+input_shape=(IMG_SIZE, IMG_SIZE, 3) # IMG_SIZE x IMG_SIZE RGB
 
 model = Sequential() 
+model.add(data_augment) # augmented only during model.fit
+model.add(data_rescale) # rescale data in model
 model.add(Conv2D(   
      batch_size, 
      kernel_size = (3, 3),
