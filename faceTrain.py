@@ -2,10 +2,15 @@
 import os
 # I don't have an NVidia GPU :(
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying Tensorflow warnings
+import tensorflow as tf
 import keras
 from keras.models import Sequential 
 from keras.layers import Dense, Dropout, Flatten 
 from keras.layers import Conv2D, MaxPooling2D 
+
+def pre_process(image,label):
+    image = tf.cast(image/255. ,tf.float32)
+    return image,label
 
 face_ds = keras.utils.image_dataset_from_directory(
     directory='./dataset',
@@ -20,6 +25,9 @@ face_ds = keras.utils.image_dataset_from_directory(
     subset="both"
 )
 train_ds, validation_ds = face_ds
+
+train_ds = train_ds.map(pre_process)
+validation_ds = validation_ds.map(pre_process)
 
 batch_size=32
 input_shape=(100, 100, 3) # 100x100 RGB
@@ -48,7 +56,7 @@ model.compile(
 callback = keras.callbacks.EarlyStopping(
     monitor="val_accuracy",
     min_delta=0,
-    patience=15,
+    patience=50,
     verbose=0,
     mode="auto",
     baseline=None,
@@ -58,7 +66,7 @@ callback = keras.callbacks.EarlyStopping(
 model.fit(
     train_ds,
     validation_data = validation_ds,
-    batch_size = 128,
+    batch_size = 32,
     epochs = 5000, 
     verbose = 1,
     shuffle = True,
