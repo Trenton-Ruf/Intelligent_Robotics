@@ -60,7 +60,7 @@ model.compile(
 callback = keras.callbacks.EarlyStopping(
     monitor="val_loss",
     min_delta=0,
-    patience=5,
+    patience=10,
     verbose=0,
     mode="auto",
     baseline=None,
@@ -71,7 +71,7 @@ model.fit(
     train_ds,
     validation_data = validation_ds,
     batch_size = 128,
-    epochs = 500, 
+    epochs = 1000, 
     verbose = 1,
     shuffle = True,
     callbacks=[callback]
