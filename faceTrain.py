@@ -82,15 +82,13 @@ history = model.fit(
     train_ds,
     validation_data = validation_ds,
     batch_size = 32,
-    epochs = 5, 
+    epochs = 5000, 
     verbose = 1,
     shuffle = True,
     callbacks=[callback]
 )
 
 #print(history.history.keys())
-
-
 
 #  Need to save training graph
 plt.plot(history.history['accuracy'], label='Training Accuracy')
@@ -103,7 +101,6 @@ plt.xlabel('Epoch')
 plt.legend(loc='best')  # legend text comes from the plot's label parameter.
 plt.savefig("./trainingGraph.png",transparent=True)
 
-
 #  Might as well put the Confusion Matrix too.
 y_test = np.concatenate([y for x, y in validation_ds], axis=0)
 pred = model.predict(validation_ds)
@@ -114,4 +111,4 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=expressions)
 disp.plot()
 plt.savefig("./confusionMatrix.png", transparent=True)
 
-#model.save('./faceModel')
+model.save('./faceModel')
