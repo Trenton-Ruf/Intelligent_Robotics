@@ -28,8 +28,8 @@ train_ds, validation_ds = face_ds
 data_augment = Sequential([
     RandomRotation(factor=(0.05), fill_mode="nearest"),
     RandomZoom(height_factor=(0.05),width_factor=(0.05), fill_mode="nearest"),
-    RandomContrast(factor=(0.10)),
-    RandomBrightness(factor=(0.10))
+    RandomContrast(factor=(0.05)),
+    RandomBrightness(factor=(0.05))
     #might add more, but not image fliping because it needs to know if right or left eyebrow raised
     ])
 
