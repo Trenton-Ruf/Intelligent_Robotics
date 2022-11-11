@@ -28,7 +28,9 @@ def cropDetection(image_input,detection):
     # Yoinked from https://stackoverflow.com/questions/71094744/how-to-crop-face-detected-via-mediapipe-in-python
     image_rows, image_cols, _ = image_input.shape
     location = detection.location_data
+    # Keypoint in order (right eye, left eye, nose tip, mouth center, right ear tragion, and left ear tragion) 
 
+    """
     relative_bounding_box = location.relative_bounding_box
     rect_start_point = _normalized_to_pixel_coordinates(
         relative_bounding_box.xmin, relative_bounding_box.ymin, image_cols,
@@ -37,13 +39,56 @@ def cropDetection(image_input,detection):
         relative_bounding_box.xmin + relative_bounding_box.width,
         relative_bounding_box.ymin + relative_bounding_box.height, image_cols,
         image_rows)
+    """
 
-    xleft,ytop=rect_start_point
-    xright,ybot=rect_end_point
+    leftEar = location.relative_keypoints[5]
+    leftEarPoint = _normalized_to_pixel_coordinates(
+        leftEar.x, leftEar.y, image_cols,
+        image_rows)
 
-    crop_img = image_input[ytop: ybot, xleft: xright]
-    resized_crop = cv2.resize(crop_img,(100,100))
-    #cv2.imshow('cropped',resized_crop)
+    rightEar = location.relative_keypoints[4]
+    rightEarPoint = _normalized_to_pixel_coordinates(
+        rightEar.x, rightEar.y, image_cols,
+        image_rows)
+
+    leftEye = location.relative_keypoints[1]
+    leftEyePoint = _normalized_to_pixel_coordinates(
+        leftEye.x, leftEye.y, image_cols,
+        image_rows)
+
+    rightEye = location.relative_keypoints[0]
+    rightEyePoint = _normalized_to_pixel_coordinates(
+        rightEye.x, rightEye.y, image_cols,
+        image_rows)
+
+
+    xrightEye_relative,yrightEye_relative = rightEyePoint
+    xleftEye_relative,yleftEye_relative = leftEyePoint
+
+    xrightEar_relative,yrightEar_relative = rightEarPoint
+    xleftEar_relative,yleftEar_relative = leftEarPoint
+
+    yEyeDiff = yrightEye_relative - yleftEye_relative
+    xEyeDiff = xrightEye_relative - xleftEye_relative
+
+    xleft = xrightEye_relative + xEyeDiff/2
+    xright = xleftEye_relative - xEyeDiff/2
+
+    if yEyeDiff < 0:
+        ytop = yrightEye_relative + xEyeDiff/1.5
+        ybot = yleftEye_relative + xEyeDiff/8
+
+    else:
+        ytop = yleftEye_relative + xEyeDiff /1.5
+        ybot = yrightEye_relative + xEyeDiff/8
+
+
+    crop_img = image_input[int(ytop): int(ybot), int(xleft): int(xright)]
+    #cv2.imshow('cropped',crop_img)
+    #return crop_img
+
+    resized_crop = cv2.resize(crop_img,(100,50))
+    #cv2.imshow('resized_cropped',resized_crop)
     return resized_crop
 
 def saveExpression(img,expression,count):
@@ -57,7 +102,6 @@ def saveExpression(img,expression,count):
     # Save Image
     if not cv2.imwrite(filename, img) :
         print("image did not save")
-    
 
 # For webcam input:
 cap = cv2.VideoCapture(0)
@@ -86,11 +130,13 @@ with mp_face_detection.FaceDetection(
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
             if results.detections:
                 detection = results.detections[0] # Grab only the closest face
-                saveExpression(cropDetection(image,detection), expressions[expression_count - 1], captureCount)
+                cropped_img = cropDetection(image,detection)
+                saveExpression(cropped_img, expressions[expression_count - 1], captureCount)
                 mp_drawing.draw_detection(image, detection) 
                 captureCount += 1
             text = "Capturing " + expressions[expression_count - 1] + " " +  str(captureCount) + "." 
             image = screenText(cv2.flip(image,1),"green",text)
+            image[0:50,0:100,:] = cropped_img
             if captureCount >= 500:
                 capturing = False
                 if expression_count > 4:

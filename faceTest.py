@@ -29,7 +29,9 @@ def cropDetection(image_input,detection):
     # Yoinked from https://stackoverflow.com/questions/71094744/how-to-crop-face-detected-via-mediapipe-in-python
     image_rows, image_cols, _ = image_input.shape
     location = detection.location_data
+    # Keypoint in order (right eye, left eye, nose tip, mouth center, right ear tragion, and left ear tragion) 
 
+    """
     relative_bounding_box = location.relative_bounding_box
     rect_start_point = _normalized_to_pixel_coordinates(
         relative_bounding_box.xmin, relative_bounding_box.ymin, image_cols,
@@ -38,21 +40,64 @@ def cropDetection(image_input,detection):
         relative_bounding_box.xmin + relative_bounding_box.width,
         relative_bounding_box.ymin + relative_bounding_box.height, image_cols,
         image_rows)
+    """
+
+    leftEar = location.relative_keypoints[5]
+    leftEarPoint = _normalized_to_pixel_coordinates(
+        leftEar.x, leftEar.y, image_cols,
+        image_rows)
+
+    rightEar = location.relative_keypoints[4]
+    rightEarPoint = _normalized_to_pixel_coordinates(
+        rightEar.x, rightEar.y, image_cols,
+        image_rows)
+
+    leftEye = location.relative_keypoints[1]
+    leftEyePoint = _normalized_to_pixel_coordinates(
+        leftEye.x, leftEye.y, image_cols,
+        image_rows)
+
+    rightEye = location.relative_keypoints[0]
+    rightEyePoint = _normalized_to_pixel_coordinates(
+        rightEye.x, rightEye.y, image_cols,
+        image_rows)
+
+
+    xrightEye_relative,yrightEye_relative = rightEyePoint
+    xleftEye_relative,yleftEye_relative = leftEyePoint
+
+    xrightEar_relative,yrightEar_relative = rightEarPoint
+    xleftEar_relative,yleftEar_relative = leftEarPoint
+
+    yEyeDiff = yrightEye_relative - yleftEye_relative
+    xEyeDiff = xrightEye_relative - xleftEye_relative
+
+    xleft = xrightEye_relative + xEyeDiff/2
+    xright = xleftEye_relative - xEyeDiff/2
+
+    if yEyeDiff < 0:
+        ytop = yrightEye_relative + xEyeDiff/1.5
+        ybot = yleftEye_relative + xEyeDiff/8
+
+    else:
+        ytop = yleftEye_relative + xEyeDiff /1.5
+        ybot = yrightEye_relative + xEyeDiff/8
 
     try:
-        xleft,ytop=rect_start_point
-        xright,ybot=rect_end_point
+        crop_img = image_input[int(ytop): int(ybot), int(xleft): int(xright)]
+        #cv2.imshow('cropped',crop_img)
+        #return crop_img
 
-        crop_img = image_input[ytop: ybot, xleft: xright]
-        resized_crop = cv2.resize(crop_img,(100,100))
-        #cv2.imshow('cropped',resized_crop)
+        resized_crop = cv2.resize(crop_img,(100,50))
+        #cv2.imshow('resized_cropped',resized_crop)
         return resized_crop
+        
     except:
         return -1
 
 def checkExpression(img,model):
     #norm = cv2.normalize(img, 0, 1, cv2.NORM_MINMAX)
-    norm = cv2.normalize(img, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    #norm = cv2.normalize(img, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
     prediction = model.predict(np.expand_dims(img,axis=0))
     expressions=['neutral','up','down','left','right']
     expression = expressions[np.argmax(prediction)]
