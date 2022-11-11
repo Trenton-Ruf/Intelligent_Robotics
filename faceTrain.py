@@ -2,12 +2,17 @@
 import os
 # I don't have an NVidia GPU :(
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # disable annoying Tensorflow warnings
+import tensorflow as tf
 import keras
 from keras.models import Sequential 
 from keras.layers import Dense, Dropout, Flatten 
 from keras.layers import Conv2D, MaxPooling2D 
 from keras.layers import Rescaling
 from keras.layers import RandomRotation, RandomZoom, RandomBrightness, RandomContrast, RandomCrop
+
+from matplotlib import pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import numpy as np
 
 expressions=['neutral','up','down','left','right']
 
@@ -73,17 +78,40 @@ callback = keras.callbacks.EarlyStopping(
     restore_best_weights=True
 )
 
-model.fit(
+history = model.fit(
     train_ds,
     validation_data = validation_ds,
     batch_size = 32,
-    epochs = 5000, 
+    epochs = 5, 
     verbose = 1,
     shuffle = True,
     callbacks=[callback]
 )
 
-#   Need to save training graph
-#   Might as well put the Confusion Matrix too.
+#print(history.history.keys())
 
-model.save('./faceModel')
+
+
+#  Need to save training graph
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='validation Loss')
+plt.title('Eyebrow Training History')
+plt.xlabel('Epoch')
+#plt.ylabel('Y')
+plt.legend(loc='best')  # legend text comes from the plot's label parameter.
+plt.savefig("./trainingGraph.png",transparent=True)
+
+
+#  Might as well put the Confusion Matrix too.
+y_test = np.concatenate([y for x, y in validation_ds], axis=0)
+pred = model.predict(validation_ds)
+
+plt.clf()
+cm = confusion_matrix(np.argmax(y_test, axis=-1), np.argmax(pred, axis=-1) )
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=expressions)
+disp.plot()
+plt.savefig("./confusionMatrix.png", transparent=True)
+
+#model.save('./faceModel')
