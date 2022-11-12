@@ -1,0 +1,5 @@
+outs:
+- md5: 20df4d42e8b7c646cd96fcb86c88e122.dir
+  size: 822927158
+  nfiles: 4
+  path: faceModel
