@@ -25,16 +25,16 @@ face_ds = keras.utils.image_dataset_from_directory(
     image_size=(50, 100),
     shuffle=True,
     seed=3,
-    validation_split=0.15,
+    validation_split=0.2,
     subset="both"
 )
 train_ds, validation_ds = face_ds
 
 data_augment = Sequential([
-    RandomRotation(factor=(0.03), fill_mode="nearest"),
+    RandomRotation(factor=(0.02), fill_mode="nearest"),
     RandomZoom(height_factor=(0.02),width_factor=(0.02), fill_mode="nearest"),
-    RandomContrast(factor=(0.1)),
-    RandomBrightness(factor=(0.1))
+    RandomContrast(factor=(0.2)),
+    RandomBrightness(factor=(0.5))
     #might add more, but not image fliping because it needs to know if right or left eyebrow raised
     ])
 
@@ -43,7 +43,7 @@ data_rescale=Sequential([Rescaling(1./255)])
 input_shape=(50, 100, 3) # IMG_SIZE x IMG_SIZE RGB
 
 model = Sequential() 
-#model.add(data_augment) # augmented only during model.fit
+model.add(data_augment) # augmented only during model.fit
 model.add(data_rescale) # rescale data in model
 model.add(Conv2D(16, kernel_size = (3, 3), input_shape=input_shape,activation='relu'))
 model.add(Conv2D(32, (3, 3), activation = 'relu')) 
@@ -65,7 +65,7 @@ model.compile(
 callback = keras.callbacks.EarlyStopping(
     monitor="val_loss",
     min_delta=0,
-    patience=5,
+    patience=15,
     verbose=0,
     mode="auto",
     baseline=None,
