@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import cv2
 from pathlib import Path
+import os
+import fnmatch
 import mediapipe as mp
 from mediapipe.python.solutions.drawing_utils import _normalized_to_pixel_coordinates
 mp_face_detection = mp.solutions.face_detection
@@ -74,7 +76,7 @@ def cropDetection(image_input,detection):
     xleft = xrightEye_relative + xEyeDiff/2
     xright = xleftEye_relative - xEyeDiff/2
 
-    if yEyeDiff < 0:
+    if yEyeDiff <= 0:
         ytop = yrightEye_relative + xEyeDiff/1.5
         ybot = yleftEye_relative + xEyeDiff/8
 
@@ -91,13 +93,18 @@ def cropDetection(image_input,detection):
     #cv2.imshow('resized_cropped',resized_crop)
     return resized_crop
 
-def saveExpression(img,expression,count):
+def saveExpression(img,expression):
+
     path = ("./dataset/" + expression)
+    count = len(fnmatch.filter(os.listdir(path), '*.jpg'))
     filename = path + "/" + str(count) + ".jpg"
+    
+    print(filename)
 
     # Create Path
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
+
 
     # Save Image
     if not cv2.imwrite(filename, img) :
@@ -131,7 +138,7 @@ with mp_face_detection.FaceDetection(
             if results.detections:
                 detection = results.detections[0] # Grab only the closest face
                 cropped_img = cropDetection(image,detection)
-                saveExpression(cropped_img, expressions[expression_count - 1], captureCount)
+                saveExpression(cropped_img, expressions[expression_count - 1])
                 mp_drawing.draw_detection(image, detection) 
                 captureCount += 1
             text = "Capturing " + expressions[expression_count - 1] + " " +  str(captureCount) + "." 
@@ -145,13 +152,22 @@ with mp_face_detection.FaceDetection(
         cv2.imshow('MediaPipe',image)
 
         keyPress = cv2.waitKey(5) & 0xFF 
+
         if keyPress == 27: # escape key
             break
-        elif keyPress == 32: # SpaceBar
-            print("spaceBar!")
-            if capturing is False:
+        elif capturing is False:
+            if keyPress == 83 and expression_count < 4: # Right Arrow
+                expression_count += 1 
+
+            elif keyPress == 81 and expression_count > 0: # Left Arrow
+                expression_count -= 1 
+
+            elif keyPress == 32: # SpaceBar
                 expression_count += 1 
                 capturing = True
+
+            #elif keyPress != 255: 
+                #print(keyPress)
 
 cap.release()
 
