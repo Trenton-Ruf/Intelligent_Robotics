@@ -25,7 +25,7 @@ face_ds = keras.utils.image_dataset_from_directory(
     image_size=(50, 100),
     shuffle=True,
     seed=3,
-    validation_split=0.1,
+    validation_split=0.20,
     subset="both"
 )
 train_ds, validation_ds = face_ds
@@ -45,20 +45,15 @@ input_shape=(50, 100, 3) # IMG_SIZE x IMG_SIZE RGB
 model = Sequential() 
 model.add(data_augment) # augmented only during model.fit
 model.add(data_rescale) # rescale data in model
-model.add(Conv2D(   
-     32, 
-     kernel_size = (3, 3),
-     input_shape=input_shape,
-     activation='relu'
-))
+model.add(Conv2D(16, kernel_size = (3, 3), input_shape=input_shape,activation='relu'))
+model.add(Conv2D(32, (3, 3), activation = 'relu')) 
 model.add(Conv2D(64, (3, 3), activation = 'relu')) 
 model.add(MaxPooling2D(pool_size = (2,2))) # 2x2 pooling, probably don't need 
 model.add(Dropout(0.25)) 
 model.add(Flatten()) 
-model.add(Dense(256, activation = 'relu')) 
-model.add(Dropout(0.5)) 
-model.add(Dense(256, activation = 'relu')) 
-model.add(Dropout(0.5)) 
+model.add(Dense(512, activation = 'relu')) 
+model.add(Dropout(0.1)) 
+model.add(Dense(128, activation = 'relu')) 
 model.add(Dense(5, activation = 'softmax'))
 
 model.compile(
@@ -71,7 +66,7 @@ model.compile(
 callback = keras.callbacks.EarlyStopping(
     monitor="val_loss",
     min_delta=0,
-    patience=15,
+    patience=50,
     verbose=0,
     mode="auto",
     baseline=None,
@@ -82,7 +77,7 @@ history = model.fit(
     train_ds,
     validation_data = validation_ds,
     batch_size = 32,
-    epochs = 5000, 
+    epochs = 6000, 
     verbose = 1,
     shuffle = True,
     callbacks=[callback]
