@@ -49,10 +49,12 @@ model.add(Conv2D(32, kernel_size = (3, 3), input_shape=input_shape,activation='r
 model.add(Conv2D(64, (3, 3), activation = 'relu')) 
 model.add(Conv2D(128, (3, 3), activation = 'relu')) 
 model.add(MaxPooling2D(pool_size = (2,2))) # 2x2 pooling, probably don't need 
-model.add(Dropout(0.1)) 
+model.add(Dropout(0.25)) 
 model.add(Flatten()) 
 model.add(Dense(1024, activation = 'relu')) 
+model.add(Dropout(0.15)) 
 model.add(Dense(512, activation = 'relu')) 
+model.add(Dropout(0.05)) 
 model.add(Dense(5, activation = 'softmax'))
 
 model.compile(
@@ -65,7 +67,7 @@ model.compile(
 callback = keras.callbacks.EarlyStopping(
     monitor="val_loss",
     min_delta=0,
-    patience=10,
+    patience=15,
     verbose=0,
     mode="auto",
     baseline=None,
