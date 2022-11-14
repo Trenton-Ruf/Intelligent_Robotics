@@ -63,35 +63,39 @@ def cropDetection(image_input,detection):
         rightEye.x, rightEye.y, image_cols,
         image_rows)
 
+    try:
 
-    xrightEye_relative,yrightEye_relative = rightEyePoint
-    xleftEye_relative,yleftEye_relative = leftEyePoint
+        xrightEye_relative,yrightEye_relative = rightEyePoint
+        xleftEye_relative,yleftEye_relative = leftEyePoint
 
-    xrightEar_relative,yrightEar_relative = rightEarPoint
-    xleftEar_relative,yleftEar_relative = leftEarPoint
+        xrightEar_relative,yrightEar_relative = rightEarPoint
+        xleftEar_relative,yleftEar_relative = leftEarPoint
 
-    yEyeDiff = yrightEye_relative - yleftEye_relative
-    xEyeDiff = xrightEye_relative - xleftEye_relative
+        yEyeDiff = yrightEye_relative - yleftEye_relative
+        xEyeDiff = xrightEye_relative - xleftEye_relative
 
-    xleft = xrightEye_relative + xEyeDiff/2
-    xright = xleftEye_relative - xEyeDiff/2
+        xleft = xrightEye_relative + xEyeDiff/2
+        xright = xleftEye_relative - xEyeDiff/2
 
-    if yEyeDiff <= 0:
-        ytop = yrightEye_relative + xEyeDiff/1.5
-        ybot = yleftEye_relative + xEyeDiff/8
+        if yEyeDiff <= 0:
+            ytop = yrightEye_relative + xEyeDiff/1.5
+            ybot = yleftEye_relative + xEyeDiff/8
 
-    else:
-        ytop = yleftEye_relative + xEyeDiff /1.5
-        ybot = yrightEye_relative + xEyeDiff/8
+        else:
+            ytop = yleftEye_relative + xEyeDiff /1.5
+            ybot = yrightEye_relative + xEyeDiff/8
 
 
-    crop_img = image_input[int(ytop): int(ybot), int(xleft): int(xright)]
-    #cv2.imshow('cropped',crop_img)
-    #return crop_img
+        crop_img = image_input[int(ytop): int(ybot), int(xleft): int(xright)]
+        #cv2.imshow('cropped',crop_img)
+        #return crop_img
 
-    resized_crop = cv2.resize(crop_img,(100,50))
-    #cv2.imshow('resized_cropped',resized_crop)
-    return resized_crop
+        resized_crop = cv2.resize(crop_img,(100,50))
+        #cv2.imshow('resized_cropped',resized_crop)
+        return resized_crop
+
+    except:
+        return -1
 
 def saveExpression(img,expression):
 
@@ -138,9 +142,10 @@ with mp_face_detection.FaceDetection(
             if results.detections:
                 detection = results.detections[0] # Grab only the closest face
                 cropped_img = cropDetection(image,detection)
-                saveExpression(cropped_img, expressions[expression_count - 1])
-                mp_drawing.draw_detection(image, detection) 
-                captureCount += 1
+                if cropped_img != -1:
+                    saveExpression(cropped_img, expressions[expression_count - 1])
+                    mp_drawing.draw_detection(image, detection) 
+                    captureCount += 1
             text = "Capturing " + expressions[expression_count - 1] + " " +  str(captureCount) + "." 
             image = screenText(cv2.flip(image,1),"green",text)
             image[0:50,0:100,:] = cropped_img

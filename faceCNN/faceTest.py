@@ -62,28 +62,28 @@ def cropDetection(image_input,detection):
         rightEye.x, rightEye.y, image_cols,
         image_rows)
 
-
-    xrightEye_relative,yrightEye_relative = rightEyePoint
-    xleftEye_relative,yleftEye_relative = leftEyePoint
-
-    xrightEar_relative,yrightEar_relative = rightEarPoint
-    xleftEar_relative,yleftEar_relative = leftEarPoint
-
-    yEyeDiff = yrightEye_relative - yleftEye_relative
-    xEyeDiff = xrightEye_relative - xleftEye_relative
-
-    xleft = xrightEye_relative + xEyeDiff/2
-    xright = xleftEye_relative - xEyeDiff/2
-
-    if yEyeDiff < 0:
-        ytop = yrightEye_relative + xEyeDiff/1.5
-        ybot = yleftEye_relative + xEyeDiff/8
-
-    else:
-        ytop = yleftEye_relative + xEyeDiff /1.5
-        ybot = yrightEye_relative + xEyeDiff/8
-
     try:
+
+        xrightEye_relative,yrightEye_relative = rightEyePoint
+        xleftEye_relative,yleftEye_relative = leftEyePoint
+
+        xrightEar_relative,yrightEar_relative = rightEarPoint
+        xleftEar_relative,yleftEar_relative = leftEarPoint
+
+        yEyeDiff = yrightEye_relative - yleftEye_relative
+        xEyeDiff = xrightEye_relative - xleftEye_relative
+
+        xleft = xrightEye_relative + xEyeDiff/2
+        xright = xleftEye_relative - xEyeDiff/2
+
+        if yEyeDiff < 0:
+            ytop = yrightEye_relative + xEyeDiff/1.5
+            ybot = yleftEye_relative + xEyeDiff/8
+
+        else:
+            ytop = yleftEye_relative + xEyeDiff /1.5
+            ybot = yrightEye_relative + xEyeDiff/8
+
         crop_img = image_input[int(ytop): int(ybot), int(xleft): int(xright)]
         #cv2.imshow('cropped',crop_img)
         #return crop_img
