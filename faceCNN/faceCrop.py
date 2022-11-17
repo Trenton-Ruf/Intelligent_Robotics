@@ -142,13 +142,14 @@ with mp_face_detection.FaceDetection(
             if results.detections:
                 detection = results.detections[0] # Grab only the closest face
                 cropped_img = cropDetection(image,detection)
-                if cropped_img != -1:
+                mp_drawing.draw_detection(image, detection) 
+                if not isinstance(cropped_img, int): 
                     saveExpression(cropped_img, expressions[expression_count - 1])
-                    mp_drawing.draw_detection(image, detection) 
                     captureCount += 1
             text = "Capturing " + expressions[expression_count - 1] + " " +  str(captureCount) + "." 
             image = screenText(cv2.flip(image,1),"green",text)
-            image[0:50,0:100,:] = cropped_img
+            if not isinstance(cropped_img, int): 
+                image[0:50,0:100,:] = cropped_img
             if captureCount >= 500:
                 capturing = False
                 if expression_count > 4:
