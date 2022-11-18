@@ -1,0 +1,83 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Wenneker Assignment
+% LaTeX Template
+% Version 2.0 (12/1/2019)
+%
+% This template originates from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Vel (vel@LaTeXTemplates.com)
+% Frits Wenneker
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[11pt]{scrartcl} % Font size
+
+\input{structure.tex} % Include the file specifying the document structure and custom commands
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\title{	
+	\normalfont\normalsize
+	\textsc{Intelligent Robotics, Portland State University}\\ % Your university, school and/or department name(s)
+	\vspace{25pt} % Whitespace
+	\rule{\linewidth}{0.5pt}\\ % Thin top horizontal rule
+	\vspace{20pt} % Whitespace
+	{\huge HW1}\\ % The assignment title
+	\vspace{4pt} % Whitespace
+	{\large Fuzzy-PID Altitude Hold}\\ % The assignment title
+	\vspace{12pt} % Whitespace
+	\rule{\linewidth}{2pt}\\ % Thick bottom horizontal rule
+	\vspace{12pt} % Whitespace
+}
+
+\author{\LARGE Trenton Ruf} % Your name
+\date{\normalsize \today} % Today's date (\today) or a custom date
+
+\begin{document}
+\maketitle % Print the title
+%\renewcommand\thesubsection{\Alph{subsection}}
+%\renewcommand\thesubsection{\Roman{subsection}}
+%\doublespacing
+%\singlespace
+%\onehalfspacing
+%\setstretch{1.25}
+
+%\begin{doublespace}
+%\end{doublespace}
+
+%\vspace*{\fill}
+%\clearpage
+%\vspace*{\fill}
+
+
+%\vspace*{\fill}
+\renewcommand\thesubsection{\Roman{subsection}}
+%\section{Loading Pre-Trained Model}
+\section{ROSflight Intro}
+
+ROSflight is open source autopilot software that runs on a small embedded flight controller. A companion computer can be used to recieve sensor data from the flight controller and send back commands. Since ROS integrates well with the Gazebo physics simulator I am testing plane controls in simulations only this term. This is mainly so I can safely "crash" the plane a lot while I learn.
+
+\section{Setup}
+\subsection{Operating System}
+I HIGHLY recomend using Ubuntu for setting up ROSflight.
+The latest supported version of ROSflight requires ROS Melodic on Ubuntu 18.04. Which is a bit unfortunate since 18.04 is already out of LTS. Though there is work on getting it ready for ROS2. Some libraries I used such as Scikit-Learn's fuzzy controller requires manual installation of a later Python version that is not supported by 18.04.
+
+\subsection{Roslaunch}
+I modified the default Roslaunch file for simulating a fixed-wing aircraft. I added the companion node roslaunch_joy and bound it to my keyboard so I can simulate a Radio Controller to manually manuever the aircraft. The RC controller is necissary to "arm" the plane before the throttle can be activated.
+
+
+
+%\clearpage
+
+\end{document}
