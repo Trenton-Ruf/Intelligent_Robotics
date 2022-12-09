@@ -11,16 +11,18 @@ altitude = None
 altitudeSetpoint = 10
 
 # create PID controller
-pid = PID(0.0015,0.0004,0.003, setpoint=altitudeSetpoint)
-pid.output_limits =(-1,1) #(-1, 1) # Aileron 
+pid = PID(0.0015,0.0004,0.003, setpoint=altitudeSetpoint) # PID tunings will be overwritten with fuzzy logic
+pid.output_limits =(-1,1) # Maximum Elevator Deflections
+
+# Time variables for calculating Error Delta
 startTime=time.time()
 endTime=0
 lastPidError = 0
 
 # Create Message Structure
 msg = Command()
-# need to ignore Aeileron and Rudder, might ignore throttle if decide to make auto-throttle node
-msg.ignore = Command.IGNORE_X | Command.IGNORE_Z 
+# need to ignore Aeileron, Rudder, and Throttle command outputs.
+msg.ignore = Command.IGNORE_X | Command.IGNORE_Z | Command.IGNORE_F 
 msg.mode = Command.MODE_PASS_THROUGH 
 
 # Create publisher
@@ -29,25 +31,19 @@ publisher = rospy.Publisher("/command",Command,queue_size=1)
 ##########################
 # Fuzzy Setup
 ##########################
-#universe = np.linspace(0,1,7) # Discrete one dimentional array
 
 # Create five fuzzy variables - two inputs, three outputs
 error = ctrl.Antecedent(np.linspace(-5,5,7), 'error')
 delta = ctrl.Antecedent(np.linspace(-40,40,7), 'delta')
 
 """
+# Funtional
 kp = ctrl.Consequent(np.linspace(0 ,0.00075,7), 'kp')
 kd = ctrl.Consequent(np.linspace(0 ,0.0055,7), 'kd')
 ki = ctrl.Consequent(np.linspace(0 ,0.00015,7), 'ki')
 """
 
-"""
-# Functional
-#error = ctrl.Antecedent(np.linspace(-5,5,7), 'error')
-kp = ctrl.Consequent(np.linspace(0 ,0.00075,7), 'kp')
-kd = ctrl.Consequent(np.linspace(0 ,0.0055,7), 'kd')
-ki = ctrl.Consequent(np.linspace(0 ,0.00015,7), 'ki')
-"""
+# Experimental
 kp = ctrl.Consequent(np.linspace(-0.000000,0.01,7), 'kp')
 kd = ctrl.Consequent(np.linspace(-0.000000,0.02,7), 'kd')
 ki = ctrl.Consequent(np.linspace(-0.000000,0.01,7), 'ki')
@@ -60,7 +56,7 @@ kp.automf(names=names)
 ki.automf(names=names)
 kd.automf(names=names)
 
-# Rules lmao here we go
+# So many rules... here we go
 
 # kp rules ################################################
 rule0 = ctrl.Rule(antecedent=((error['nb'] & delta['nb']) |
@@ -127,7 +123,6 @@ rule6 = ctrl.Rule(antecedent=((error['pb'] & delta['pm']) |
                   consequent=kp['nb'], label='rule kp nb')
 
 # ki rules ################################################
-
 rule7 = ctrl.Rule(antecedent=((error['nb'] & delta['nb']) |
                               (error['nm'] & delta['nb']) |
                               (error['ns'] & delta['nb']) |
@@ -262,10 +257,11 @@ system = ctrl.ControlSystem(rules=[
                                     rule7,  rule8,  rule9,  rule10, rule11, rule12, rule13,
                                     rule14, rule15, rule16, rule17, rule18, rule19, rule20
                                     ])
-#Maybe set clip_to_bounds=False to not limit output to universe
 sim = ctrl.ControlSystemSimulation(system, flush_after_run=1000) # lower flush if memory is scarce
 
 altList=[]
+# Averages the last three altimeter readings before sending the reading to altitudePID
+# Currently not used!
 def altimeterFilter(baro):
     altList.insert(0,baro.altitude)
     if len(altList) > 3:
@@ -273,8 +269,9 @@ def altimeterFilter(baro):
         avgAltitude = sum(altList) / float(len(altList))
         altitudePID(avgAltitude)
 
-
-def altitudePID(altitude):
+# Recieves altitude readings and outputs Elevator deflection commands
+def altitudePID(baro):
+    altitude = baro.altitude
 
     global startTime
     global endTime
@@ -286,6 +283,7 @@ def altitudePID(altitude):
     pidDelta = float(pidError - lastPidError)/float(endTime - startTime)
     lastPidError = pidError
 
+    # Reset timer for calculating error delta
     endTime = startTime
     startTime = time.time() 
     
@@ -293,6 +291,7 @@ def altitudePID(altitude):
     sim.input['error']= pidError
     sim.input['delta']= pidDelta
     sim.compute()
+    
     #Set pid tunings from fuzzy logic
     pid.tunings = (sim.output['kp'],
                     sim.output['ki'],
@@ -300,9 +299,9 @@ def altitudePID(altitude):
                     )
 
     msg.header.stamp = rospy.Time.now()
-    msg.F = 1.0        #Throttle (0,1)
     msg.y = pid(altitude) 
     publisher.publish(msg)
+    # Send info to the console for debugging
     rospy.loginfo("Altitude:"+str(round(altitude, 4)) + 
                     " Elevator:"+str(round(msg.y, 4)) + 
                     " Kp:"+str(round(sim.output['kp'], 4)) + 
@@ -315,10 +314,11 @@ def altitudePID(altitude):
 if __name__ == '__main__':
     try:
         # Init Node
-        rospy.init_node('altitudePID')
+        rospy.init_node('fuzzy-altitudePID')
 
         # Create listener
-        rospy.Subscriber("/baro",Barometer, altimeterFilter)
+        #rospy.Subscriber("/baro",Barometer, altimeterFilter) # with filter
+        rospy.Subscriber("/baro",Barometer, altitudePID ) # bypass filter
 
         rospy.spin()
 
@@ -327,4 +327,3 @@ if __name__ == '__main__':
 
 #msg.x = 0.0 #Aeileron deflection (-1,1)
 #msg.z = 0.0 #Rudder deflection (-1,1)
-#rospy.loginfo(msg)

@@ -30,15 +30,17 @@
     <param name="udp" value="true"/>
   </node>
 
-<!--
+  <!--
   <node name="altitudePID" pkg="rosflight_control" type="altitudePID.py">
   </node>
--->
+  -->
 
   <node name="rc_keyboard" pkg="rosflight_joy" type="rc_keyboard">
     <remap from="RC" to="fixedwing/RC"/>
     <param name="auto_arm" value="true"/>
+    <!--
     <param name="auto_takeoff" value="true"/>
+    -->
   </node>
 </launch>
 
