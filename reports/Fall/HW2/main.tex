@@ -1,0 +1,75 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Wenneker Assignment
+% LaTeX Template
+% Version 2.0 (12/1/2019)
+%
+% This template originates from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Vel (vel@LaTeXTemplates.com)
+% Frits Wenneker
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[11pt]{scrartcl} % Font size
+
+\input{structure.tex} % Include the file specifying the document structure and custom commands
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\title{	
+	\normalfont\normalsize
+	\textsc{Intelligent Robotics, Portland State University}\\ % Your university, school and/or department name(s)
+	\vspace{25pt} % Whitespace
+	\rule{\linewidth}{0.5pt}\\ % Thin top horizontal rule
+	\vspace{20pt} % Whitespace
+	{\huge HW2}\\ % The assignment title
+	\vspace{4pt} % Whitespace
+	{\large Eyebrow Dataset Collection}\\ % The assignment title
+	\vspace{12pt} % Whitespace
+	\rule{\linewidth}{2pt}\\ % Thick bottom horizontal rule
+	\vspace{12pt} % Whitespace
+}
+
+\author{\LARGE Trenton Ruf} % Your name
+\date{\normalsize \today} % Today's date (\today) or a custom date
+
+\begin{document}
+\maketitle % Print the title
+%\renewcommand\thesubsection{\Alph{subsection}}
+%\renewcommand\thesubsection{\Roman{subsection}}
+%\doublespacing
+%\singlespace
+%\onehalfspacing
+%\setstretch{1.25}
+
+%\begin{doublespace}
+%\end{doublespace}
+
+%\vspace*{\fill}
+%\clearpage
+%\vspace*{\fill}
+
+
+%\vspace*{\fill}
+\renewcommand\thesubsection{\Roman{subsection}}
+%\section{Loading Pre-Trained Model}
+\section{Purpose}
+I want to control a model airplane with my eyebrows. To do this I'm leveraging Computer vision tools to to regocnize my eyebrow positions with a webcam.
+\section{MediaPipe}
+I am using the open source tool mediapipe to do face detections. It gives me a bounding box location of my face as well as 6 keypoints (eyes, ears, nose, and mouth).  
+
+
+%\clearpage
+
+\end{document}
