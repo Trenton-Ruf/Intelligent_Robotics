@@ -23,6 +23,7 @@ face_ds = keras.utils.image_dataset_from_directory(
     label_mode='categorical', # catagorical for catagorical_crossentropy 
     batch_size=32, 
     image_size=(50, 100),
+    color_mode=('grayscale'),
     shuffle=True,
     seed=3,
     validation_split=0.2,
@@ -40,7 +41,7 @@ data_augment = Sequential([
 
 data_rescale=Sequential([Rescaling(1./255)])
 
-input_shape=(50, 100, 3) # IMG_SIZE x IMG_SIZE RGB
+input_shape=(50, 100, 1) # IMG_SIZE x IMG_SIZE GRAYSCALE
 
 model = Sequential() 
 model.add(data_augment) # augmented only during model.fit
