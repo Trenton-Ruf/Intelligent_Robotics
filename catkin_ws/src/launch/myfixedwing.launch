@@ -4,7 +4,7 @@
   <arg name="color"               default="White"/>
   <arg name="x"                   default="0"/>
   <arg name="y"                   default="0"/>
-  <arg name="z"                   default="0.2"/>
+  <arg name="z"                   default=".2"/>
   <arg name="yaw"                 default="0"/>
   <arg name="paused"              default="false"/>
   <arg name="gui"                 default="true"/>
@@ -24,6 +24,12 @@
     <arg name="debug" value="$(arg debug)"/>
     <arg name="xacro_file" value="$(find rosflight_sim)/xacro/fixedwing.urdf.xacro"/>
     <arg name="param_file" value="$(find rosflight_sim)/params/fixedwing.yaml"/>
+
+    <!-- CHANGE DEFAULT WORLD FILE -->
+    <!-- CURRENT COMPUTER TOO WIMPY FOR A FULL AIRFIELD :( -->
+    <!-- MUST USE FULL PATH? -->
+    <!-- <arg name="world_file"          default="/home/trenton/Intelligent_Robotics/catkin_ws/src/launch/empty_runway.world"/> -->
+    <!-- <arg name="world_file"          default="/home/trenton/Intelligent_Robotics/catkin_ws/src/launch/airfield.world"/> -->
   </include>
 
   <node name="rosflight_io" pkg="rosflight" type="rosflight_io" output="screen">
@@ -35,6 +41,7 @@
   </node>
   -->
 
+  <!-- BIND KEYBOARD TO RC CONTROLS -->
   <node name="rc_keyboard" pkg="rosflight_joy" type="rc_keyboard">
     <remap from="RC" to="fixedwing/RC"/>
     <param name="auto_arm" value="true"/>
