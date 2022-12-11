@@ -22,6 +22,9 @@
 \documentclass[11pt]{scrartcl} % Font size
 
 \input{structure.tex} % Include the file specifying the document structure and custom commands
+\usepackage{cite}
+
+\usepackage{hyperref}
 
 %----------------------------------------------------------------------------------------
 %	TITLE SECTION
@@ -64,20 +67,86 @@
 %\vspace*{\fill}
 \renewcommand\thesubsection{\Roman{subsection}}
 %\section{Loading Pre-Trained Model}
-\section{ROSflight Intro}
+\section{rosflight intro}
 
-ROSflight is open source autopilot software that runs on a small embedded flight controller. A companion computer can be used to recieve sensor data from the flight controller and send back commands. Since ROS integrates well with the Gazebo physics simulator I am testing plane controls in simulations only this term. This is mainly so I can safely "crash" the plane a lot while I learn.
+ROSflight is open source autopilot software that runs on a small embedded flight controller. A companion computer can be used to recieve sensor data from the flight controller and send back commands. Since ROS integrates well with the Gazebo physics simulator I am testing plane controls in simulations only this term. This is mainly so I can safely "crash" the plane a lot while learning how to program flight controls.
 
-\section{Setup}
+\section{setup}
 \subsection{Operating System}
 I HIGHLY recomend using Ubuntu for setting up ROSflight.
-The latest supported version of ROSflight requires ROS Melodic on Ubuntu 18.04. Which is a bit unfortunate since 18.04 is already out of LTS. Though there is work on getting it ready for ROS2. Some libraries I used such as Scikit-Learn's fuzzy controller requires manual installation of a later Python version that is not supported by 18.04.
+The latest supported version of ROSflight requires ROS Melodic on Ubuntu 18.04. Which is a bit unfortunate since 18.04 is already out of LTS. Though there is work on getting it ready for ROS2. Some libraries I used such as Scikit-Learn's fuzzy controller requires manual installation of a later Python version than what is supported by 18.04.
 
 \subsection{Roslaunch}
-I modified the default Roslaunch file for simulating a fixed-wing aircraft. I added the companion node roslaunch_joy and bound it to my keyboard so I can simulate a Radio Controller to manually manuever the aircraft. The RC controller is necissary to "arm" the plane before the throttle can be activated.
+I followed the guides on the official ROSflight website cover the installation of ROS, ROSflight, and the Gazebo simulator. I modified the default Roslaunch file for simulating a fixed-wing aircraft to include rosflight\_joy, a companion node that binds keystrokes to a simulated Radio Controller to manually manuever the aircraft. The RC controller is necissary to "arm" the plane before the throttle can be activated. Since ROSflight is designed to run on an actual aircraft, there is a bit of configuration required begin simulations. You must calibrate the IMU and set the appropriate fixed wing parameters (i.e. tell ROSflight it is a plane and not a multi-copter). More details can be found in the official documentation. The modified roslaunch file is called myfixedwing.launch and it also includes links to two seperate world files I created. Both of these worlds are aifields but unfortunately the computer I am running the simulation on currently cannot render them in realtime, so they are currently disabled.
+
+\subsection{Gazebo}
+The Gazebo installation should happen along side ROSflight, but you may encounter the following error when first running a simulation: 
+
+\small
+\color{red}
+[Err] [ModelDatabase.cc:235] No <database> tag in the model database database.config found here[\url{http://gazebosim.org/models/}]
+
+[Err] [ModelDatabase.cc:294] Unable to download model manifests
+\\
+\color{black}
+\normalsize
+
+The location of the model database has changed but has not been reflected in the gazebo package yet. The fix is to redirect to the correct URL before running the any launch files:
+
+\small
+\color{green}
+export GAZEBO\_MODEL\_DATABASE\_URI=\url{http://models.gazebosim.org/}
+\\ \color{black}
+\normalsize
+
+The gazebo website is undergoing a major reconstruction at the moment. You should open up the URL above in a web browser too to check if the fix is still working.
 
 
 
-%\clearpage
+
+\section{altitude hold pid}
+The ROSflight node outputs a "Barometer" message that contains temperature, pressure, and altitude data. It also listens on the "Command" message for setting the plane's throttle, aeleron, elevator, and rudder control surface positions. I created a new node called altitudePID that subscribes to the altitude reading and publishes an elevator position command. The mapping of altitude inputs to elevator outputs was done with a PID controller from the "simple\_pid" python library. The tuning of the PID gains was conducted with a trial and error approach. I followed the Ziegler–Nichols method for the most part. The altitude hold setpoint was hard-coded to be 10 Meters above the ground. All control surfaces have a deflection range of (-1,1). That said during normal flight they should never get close to the maximum ranges. When testing full elevator deflection in flight the plane immedietly turns 90 degrees and stalls.
+
+
+
+\section{fuzzy pid!}
+The altitudePID node works well for holding altidude while the wings are level, but an ubrupt bank will begin large altitude oscillations. I believe this is due to the amount verticle lift that the elevator can influence being decreased with larger bank angles. The PID controller was tuned for maximum lift influence, so it makes sense that it will have problems when it falls out its ideal environment. To fix this issue the gains of the PID controller need to be altered during operation.  
+\\
+
+I found a white paper that covers an implementation of fuzzy-inference for airplane pitch control~\cite{fuzzy}. Since pitch is controlled with the elevator position I believed it would also work as an altitude controller. I created the "fuzzy-altitudePID" node that takes the fuzzy logic rules presented in the paper and integrates them with the altitudePID node from earlier. While the rules where kept the same I changed the ranges of all other parameters. All of these values where found from experimentation. For instance, the error delta range was determined by sending large manual inputs to the plane in flight to see what maximum and minimum error values could be. The tuning method from the original altitudePID node did not work for the fuzzy ruleset. 
+
+\subsection{code}
+\lstinputlisting[
+	caption= altitudePID, % Caption above the listing
+	%label=lst:test, % Label for referencing this listing
+	language=Python, % Use Perl functions/syntax highlighting
+	frame=single, % Frame around the code listing
+	breaklines=true,
+	postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},	
+	showstringspaces=false, % Don't put marks in string spaces
+	numbers=left, % Line numbers on left
+	numberstyle=\tiny, % Line numbers styling
+	basicstyle=\footnotesize
+	]{../../../catkin_ws/src/rosflight_control/src/altitudePID.py}
+
+\lstinputlisting[
+	caption= fuzzy-altitudePID, % Caption above the listing
+	%label=lst:test, % Label for referencing this listing
+	language=Python, % Use Perl functions/syntax highlighting
+	frame=single, % Frame around the code listing
+	breaklines=true,
+	postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},	
+	showstringspaces=false, % Don't put marks in string spaces
+	numbers=left, % Line numbers on left
+	numberstyle=\tiny, % Line numbers styling
+	basicstyle=\footnotesize
+	]{../../../catkin_ws/src/rosflight_control/src/fuzzy-altitudePID.py}
+
+
+\clearpage
+\medskip
+
+\bibliography{resources.bib}{}
+\bibliographystyle{IEEEtran}
 
 \end{document}

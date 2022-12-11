@@ -3,3 +3,13 @@ catkin_ws/build
 *sync-conflict-*
 *.swp
 local/
+report/*.aux
+report/*.bbl
+report/*.bcf
+report/*.blg
+report/*.fdb_latexmk
+report/*.fls
+report/*.log
+report/*.out
+report/*.run.xml
+report/*.synctex.gz
