@@ -65,19 +65,19 @@
 %\vspace*{\fill}
 \renewcommand\thesubsection{\Roman{subsection}}
 \section{Overview}
-I want to control a model airplane with my eyebrows. To do this I'm leveraging Computer vision tools to to recognize my eyebrow positions with a webcam. Having both eyebrows up will pitch the airplane up, both eyebrows down will pitch down, only left eyebrow up will bank right, only right eyebrow up will bank left, and neutral eyebrows will hold elevation with no bank. The original plan was to create a dataset of my entire face, but later changed to cropping out and saving just my eyebrows to hopefully reduce the amount of uneccisary features for a convolutional neural network to train on.
+I want to control a model airplane with my eyebrows. To do this I'm leveraging Computer vision tools to to recognize my eyebrow positions with a webcam. Having both eyebrows up will pitch the airplane up, both eyebrows down will pitch down, only left eyebrow up will bank right, only right eyebrow up will bank left, and neutral eyebrows will hold elevation with no bank. The original plan was to create a dataset of my entire face, but later changed to cropping out and saving just my eyebrows to hopefully reduce the amount of unnecessary features for a convolutional neural network to train on.
 
 \section{MediaPipe}
 I am using the open source tool Mediapipe to do face detections. It gives me a bounding box location of my face as well as 6 keypoints (eyes, ears, nose, and mouth).  
 It is based on the BlazeFace face tracking model and runs very quickly on just a CPU. 
-Which is great for me because I don't have a powerful GPU to take advantage of the great number parrellel computations required by most computer vision tasks.
-A parameter I set was to only capture the closest face to the webcam, as I don't want someone passing behind me to accidently get control of the plane.
+Which is great for me because I don't have a powerful GPU to take advantage of the vast number parallel computations required by most computer vision tasks.
+I set it to only capture the closest face to the webcam, as I don't want someone passing behind me to accidentally get control of the plane.
 
 \section{OpenCV}
 OpenCV is being used to do most everything else other than the face detection.
 I've made a simple user interface to help with the dataset creation. 
 It prompts the user to begin collecting 500 images at a time. Any more than that and my eyebrow muscles get tired.
-The user interface is a cv2 image window with text overlay. The text acts as the user promtps and reports how many images have been captured.
+The user interface is a cv2 image window with text overlay. The text acts as the user prompts and reports how many images have been captured.
 The user can input the left and right arrow keys to change what eyebrow expression they want to capture, and press spacebar to begin capturing.
 The escape key can be pressed to exit the application.
 
@@ -86,7 +86,7 @@ To capture just my eyebrows I extracted the relative location of my left and rig
 I then cropped the original image relative to the distance my eyes are apart. 
 This way the same area will be cropped independent of the distance my face is to the webcam.
 I set the ratio to be wider than the width of my eyes, but not to include my ears.
-It does create some distortion when I turn my head significantly as the distance between my eyes gets smaller from the webcam's point of view, but it still works well enough for my purposes.
+It creates some distortion when I turn my head significantly as the distance between my eyes gets smaller from the webcam's point of view, but it still works well enough for my purposes.
 
 \begin{figure}[ht!] % [h] forces the figure to be output where it is defined in the code (it suppresses floating)
 	\centering

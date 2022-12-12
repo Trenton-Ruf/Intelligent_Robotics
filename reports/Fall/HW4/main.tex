@@ -1,4 +1,4 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Wenneker Assignment
 % LaTeX Template
 % Version 2.0 (12/1/2019)
@@ -65,15 +65,15 @@
 %\vspace*{\fill}
 \renewcommand\thesubsection{\Roman{subsection}}
 \section{Overview}
-The realtime prediction of my eyebrow state is going to be used to control a model airplane.
+The real-time prediction of my eyebrow state is going to be used to control a model airplane.
 This module tests the functionality on a live video feed instead of the saved dataset created in homework 2.
-Much of the code is the same between the two homeworks since a large part of it is capturing and sending images to MediaPipe for face detection, 
+Much of the code is the same between the two homework since a large part of it is capturing and sending images to MediaPipe for face detection, 
 and from there cropping my eyebrows out of the image.
 
 \section{Functionality}
 If my face is in frame, then there will be text overlaid the user interface with a prediction of my eyebrow state. 
 This prediction is made from piping the cropped image of my eyebrows through the tensorflow model created in homework 3. 
-The dimentions of the image have to be increased because the model expects a batch of images.
+The dimensions of the image have to be increased because the model expects a batch of images.
 So I send it a batch of 1 image for each prediction.
 If my face is not in frame then the overlaid text will read ""Expression: failed".
 

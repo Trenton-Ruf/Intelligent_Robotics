@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1670809648 "main.tex" "main.pdf" "main" 1670809650
+["pdflatex"] 1670825875 "main.tex" "main.pdf" "main" 1670825878
   "../../../faceCNN/faceTrain.py" 1670792866 3576 b7fe88631f6c06a3b607c5ded5f02549 ""
   "/usr/share/texmf-dist/fonts/enc/dvips/base/8r.enc" 1650183167 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1650183167 2971 def0b6c1f0b107b3b936def894055589 ""
@@ -241,9 +241,9 @@
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1668873770 2927662 41f9f78409faf55ed165609ebdc29277 ""
   "figures/confusionMatrix_RGB.png" 1670721575 21777 336570e6aba9ff8774aa6f41da716ec9 ""
   "figures/trainingGraph_RGB.png" 1670721604 45384 fc59d44aba3447f879543fbe04f3dbee ""
-  "main.aux" 1670809650 3210 14ccabba01f415fa811835b241545b3e "pdflatex"
+  "main.aux" 1670825877 3210 14ccabba01f415fa811835b241545b3e "pdflatex"
   "main.out" 0 -1 0 "pdflatex"
-  "main.tex" 1670809644 6065 1cd673c2a72a61db1612898d8eea9557 ""
+  "main.tex" 1670825857 6063 ab461a78fe420eeef0168bf9c854561a ""
   "structure.tex" 1670805645 3842 4bb7de79dfe0271dca618ce4799a3ab0 ""
   (generated)
   "main.aux"

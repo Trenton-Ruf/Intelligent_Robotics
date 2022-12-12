@@ -1,11 +1,11 @@
 # Fdb version 3
-["pdflatex"] 1670801809 "main.tex" "main.pdf" "main" 1670801811
+["pdflatex"] 1670825651 "main.tex" "main.pdf" "main" 1670825653
   "../../../faceCNN/dataset/down/1000.jpg" 1668894013 2009 972e4e9fea584e82bf8377bebc199954 ""
   "../../../faceCNN/dataset/left/1500.jpg" 1668893929 2123 0f30167f6dbac109fff9a19545d4435b ""
   "../../../faceCNN/dataset/neutral/1000.jpg" 1668894013 1976 62c06b486d758401403b68d21dc2f350 ""
   "../../../faceCNN/dataset/right/1000.jpg" 1668893963 2101 aa76f08587bdad3bbd81f9a1573b0740 ""
   "../../../faceCNN/dataset/up/1000.jpg" 1668894000 2007 bc5bed995e54926b80908880c8343488 ""
-  "../../../faceCNN/faceCrop.py" 1670798507 7239 354466902f598dfa03a194955cd0a6d2 ""
+  "../../../faceCNN/faceCrop.py" 1670814613 7239 91430bf58bab9f00ee1fcda2aeacbf3e ""
   "/usr/share/texmf-dist/fonts/enc/dvips/base/8r.enc" 1650183167 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1650183167 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1650183167 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -247,9 +247,9 @@
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1668873793 4283473 0845eee95dc89f9b12a9a62b7daed425 ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1668873770 2927662 41f9f78409faf55ed165609ebdc29277 ""
   "figures/Capturing-Example.png" 1670798465 378521 d6600747b75285d3078242173ad896ba ""
-  "main.aux" 1670801811 2682 4ae2533bb2341d2e9a07f68e7165b164 "pdflatex"
+  "main.aux" 1670825653 2682 4ae2533bb2341d2e9a07f68e7165b164 "pdflatex"
   "main.out" 0 -1 0 "pdflatex"
-  "main.tex" 1670801805 5975 b91810b6feda9b1d4c54b2532b90f33b ""
+  "main.tex" 1670825650 5959 c8f437eabd83ca5cc1ff77021b3f7da6 ""
   "structure.tex" 1670787756 3842 4bb7de79dfe0271dca618ce4799a3ab0 ""
   (generated)
   "main.aux"

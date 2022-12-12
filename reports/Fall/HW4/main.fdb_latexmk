@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1670818651 "main.tex" "main.pdf" "main" 1670818653
+["pdflatex"] 1670826097 "main.tex" "main.pdf" "main" 1670826099
   "../../../faceCNN/faceTest.py" 1670814612 6049 3abbfd0fd5f40ce16ad304bf02d3686c ""
   "/usr/share/texmf-dist/fonts/enc/dvips/base/8r.enc" 1650183167 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1650183167 2971 def0b6c1f0b107b3b936def894055589 ""
@@ -246,9 +246,9 @@
   "figures/neutral.png" 1670818044 463939 eefd722599c6f5e32142e9ac03751bb6 ""
   "figures/right.png" 1670818200 456625 7fcdfcd6baee0d7f3ee09b0962dde277 ""
   "figures/up.png" 1670818099 462394 04198eee0850890265da003901d08d37 ""
-  "main.aux" 1670818653 2220 63476f4ff34309c4f628d369c1b26633 "pdflatex"
+  "main.aux" 1670826099 2220 63476f4ff34309c4f628d369c1b26633 "pdflatex"
   "main.out" 0 -1 0 "pdflatex"
-  "main.tex" 1670818650 4607 1b2a2cc323b4e4faa8838f1271fe353b ""
+  "main.tex" 1670826095 4606 7df10cb4da4d06d6a6d777e7228fefdb ""
   "structure.tex" 1670809759 3842 4bb7de79dfe0271dca618ce4799a3ab0 ""
   (generated)
   "main.aux"

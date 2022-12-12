@@ -1,12 +1,12 @@
 # Fdb version 3
-["bibtex main"] 1670720953 "main.aux" "main.bbl" "main" 1670720956
+["bibtex main"] 1670825221 "main.aux" "main.bbl" "main" 1670825312
   "/usr/share/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1650181511 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1670720956 3572 709fb3726ccf93814c1a6e382ce7c98c "pdflatex"
+  "main.aux" 1670825312 3572 fa4ac6aa477db368c794336985a84824 "pdflatex"
   "resources.bib" 1670635286 581 559b7a4e17c3a1e08d8d252f3fd6b6e4 ""
   (generated)
   "main.bbl"
   "main.blg"
-["pdflatex"] 1670720953 "main.tex" "main.pdf" "main" 1670720956
+["pdflatex"] 1670825310 "main.tex" "main.pdf" "main" 1670825312
   "../../../catkin_ws/src/rosflight_control/src/altitudePID.py" 1670628888 1338 a6c834b9a7f7e075e960f352e7ec10b7 ""
   "../../../catkin_ws/src/rosflight_control/src/fuzzy-altitudePID.py" 1670628888 14720 b170500c1ef2881a2a3166738273e746 ""
   "/usr/share/texmf-dist/fonts/enc/dvips/base/8r.enc" 1650183167 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -254,10 +254,10 @@
   "/usr/share/texmf-dist/web2c/texmf.cnf" 1650183167 39911 2da6c67557ec033436fe5418a70a8a61 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1668873793 4283473 0845eee95dc89f9b12a9a62b7daed425 ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1668873770 2927662 41f9f78409faf55ed165609ebdc29277 ""
-  "main.aux" 1670720956 3572 709fb3726ccf93814c1a6e382ce7c98c "pdflatex"
-  "main.bbl" 1670720953 1152 188ed59135819eedf4bb6b738a0fbc17 "bibtex main"
+  "main.aux" 1670825312 3572 fa4ac6aa477db368c794336985a84824 "pdflatex"
+  "main.bbl" 1670825221 1152 188ed59135819eedf4bb6b738a0fbc17 "bibtex main"
   "main.out" 0 -1 0 "pdflatex"
-  "main.tex" 1670720950 8350 e54f136aec6da0b84ae5d641dcd0d3f0 ""
+  "main.tex" 1670825308 8339 024db829c7d74619b9969e528734d753 ""
   "structure.tex" 1670632519 3842 4bb7de79dfe0271dca618ce4799a3ab0 ""
   (generated)
   "main.aux"

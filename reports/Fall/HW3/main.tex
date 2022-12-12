@@ -77,14 +77,14 @@ To make up for my small dataset I implemented four common data augmentation laye
 
 \section{Model}
 I added three convolutional layers followed by a 2x2 pooling layer. 
-I've read that many computer vision researchers dislike pooling because it decreases the feature space, but implemented it because it should offer a realtime speed advantage for a tradeoff in accuracy.
+I've read that many computer vision researchers dislike pooling because it decreases the feature space, but implemented it because it should offer a real-time speed advantage for a trade-off in accuracy.
 I then added a series of dropout layers and dense hidden layers before ending it with a softmax.
-The output of the convolutions was flattened before the first dense layer to coelesce the features into a 1-D array.
-I want to experiment more with the number of dense layers and thier perceptron count. I will do that during the winter break before next term.
+The output of the convolutions was flattened before the first dense layer to coalesce the features into a 1-D array.
+I want to experiment more with the number of dense layers and their perceptron count. I will do that during the winter break before next term.
 As it is the model is far larger than I want it to be, so I will decrease the number of perceptrons and convolutional filters in the future.
 
 \section{Training}
-The model was trained until its validation loss value no longer deacreased after 15 epochs in a row. 
+The model was trained until its validation loss value no longer decreased after 15 epochs in a row. 
 This was done with keras' early stopping feature. Since I don't have a dedicated GPU the training was very slow. 
 It took over 40 hours to train this model. Another reason I want to try decreasing the number and size of the layers.
 
@@ -96,11 +96,11 @@ It took over 40 hours to train this model. Another reason I want to try decreasi
 	\caption{Confusion matrix}
 \end{figure}
 
-The model converged around 500 epochs at over 97\% accuracy on the validation data. It had the most trouble distinguishing between a couple catagories. 
+The model converged around 500 epochs at over 97\% accuracy on the validation data. It had the most trouble distinguishing between a couple categories. 
 Neutral and down eyebrows was one. 
 The distance covered by the eyebrows is the least between these two, so maybe that is the reason.
-The other catagory pair that had difficulties was left and right.
-This initially didn't make much sense to me because these should be the two that are the most different from eachother since they are opposite. I believe the issue stems from the the dataset rather than the model. 
+The other category pair that had difficulties was left and right.
+This initially didn't make much sense to me because these should be the two that are the most different from each other since they are opposite. I believe the issue stems from the dataset rather than the model. 
 When looking through the dataset manually I found quite a few pictures of left raised eyebrows that were actually right. 
 I will remake the left and right portion of the dataset and train it again in the future.
 \clearpage
@@ -116,7 +116,7 @@ Along with decreasing the size of the model I want to do more accuracy compariso
 \begin{itemize}
 	\item Data augmentation levels
 	\item Dataset size 
-	\item Un-even dataset distrubutions
+	\item Un-even dataset distributions
 	\item Color - RGB vs Grayscale
 \end{itemize}
 
