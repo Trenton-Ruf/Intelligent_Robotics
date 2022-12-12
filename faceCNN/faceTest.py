@@ -13,6 +13,9 @@ import keras
 from keras.models import load_model
 import numpy as np
 
+# Overlay text onto user interface
+# Input original image, text color, and text contents
+# Returns new image with overlayed text
 def screenText(img,color,text):
     if color.lower() == "green":
         font_color = (0,255,0)
@@ -25,12 +28,17 @@ def screenText(img,color,text):
     img_text = cv2.putText(img, text, (x,y), font, font_size, font_color, font_thickness, cv2.LINE_AA)
     return img_text
 
+# Crops eyebrows from image
+# Input original image and mediapipe face keypoint coordinates
+# Returns 50x100 px image containing only eyebrows
 def cropDetection(image_input,detection):
-    # Yoinked from https://stackoverflow.com/questions/71094744/how-to-crop-face-detected-via-mediapipe-in-python
+    # Example from from https://stackoverflow.com/questions/71094744/how-to-crop-face-detected-via-mediapipe-in-python
     image_rows, image_cols, _ = image_input.shape
     location = detection.location_data
     # Keypoint in order (right eye, left eye, nose tip, mouth center, right ear tragion, and left ear tragion) 
 
+    # Get bounding box coordinates
+    # Not used since transitioning to eyebrows only instead of full face
     """
     relative_bounding_box = location.relative_bounding_box
     rect_start_point = _normalized_to_pixel_coordinates(
@@ -62,6 +70,7 @@ def cropDetection(image_input,detection):
         rightEye.x, rightEye.y, image_cols,
         image_rows)
 
+    # crop image depending on distance between left and right eye
     try:
 
         xrightEye_relative,yrightEye_relative = rightEyePoint
@@ -95,6 +104,9 @@ def cropDetection(image_input,detection):
     except:
         return -1
 
+# predict eyebrow expression 
+# Input cropped image and Trained model
+# Return predicted expression
 def checkExpression(img,model):
     #norm = cv2.normalize(img, 0, 1, cv2.NORM_MINMAX)
     #norm = cv2.normalize(img, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)

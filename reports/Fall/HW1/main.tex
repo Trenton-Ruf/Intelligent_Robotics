@@ -107,8 +107,6 @@ The gazebo website is undergoing a major reconstruction at the moment. You shoul
 \section{altitude hold pid}
 The ROSflight node outputs a "Barometer" message that contains temperature, pressure, and altitude data. It also listens on the "Command" message for setting the plane's throttle, aeleron, elevator, and rudder control surface positions. I created a new node called altitudePID that subscribes to the altitude reading and publishes an elevator position command. The mapping of altitude inputs to elevator outputs was done with a PID controller from the "simple\_pid" python library. The tuning of the PID gains was conducted with a trial and error approach. I followed the Ziegler–Nichols method for the most part. The altitude hold setpoint was hard-coded to be 10 Meters above the ground. All control surfaces have a deflection range of (-1,1). That said during normal flight they should never get close to the maximum ranges. When testing full elevator deflection in flight the plane immedietly turns 90 degrees and stalls.
 
-
-
 \section{fuzzy pid!}
 The altitudePID node works well for holding altidude while the wings are level, but an ubrupt bank will begin large altitude oscillations. I believe this is due to the amount verticle lift that the elevator can influence being decreased with larger bank angles. The PID controller was tuned for maximum lift influence, so it makes sense that it will have problems when it falls out its ideal environment. To fix this issue the gains of the PID controller need to be altered during operation.  
 \\
@@ -116,6 +114,11 @@ The altitudePID node works well for holding altidude while the wings are level, 
 I found a white paper that covers an implementation of fuzzy-inference for airplane pitch control~\cite{fuzzy}. Since pitch is controlled with the elevator position I believed it would also work as an altitude controller. I created the "fuzzy-altitudePID" node that takes the fuzzy logic rules presented in the paper and integrates them with the altitudePID node from earlier. While the rules where kept the same I changed the ranges of all other parameters. All of these values where found from experimentation. For instance, the error delta range was determined by sending large manual inputs to the plane in flight to see what maximum and minimum error values could be. The tuning method from the original altitudePID node did not work for the fuzzy ruleset. 
 
 \subsection{code}
+
+All files related to this project can be found at:
+
+\url{https://github.com/Trenton-Ruf/Intelligent_Robotics}
+
 \lstinputlisting[
 	caption= altitudePID, % Caption above the listing
 	%label=lst:test, % Label for referencing this listing
