@@ -14,6 +14,9 @@ expressions=['neutral','up','down','left','right']
 expression_count = 0
 capturing = False
 
+# Overlay text onto user interface
+# Input original image, text color, and text contents
+# Returns new image with overlayed text
 def screenText(img,color,text):
     if color.lower() == "green":
         font_color = (0,255,0)
@@ -26,12 +29,17 @@ def screenText(img,color,text):
     img_text = cv2.putText(img, text, (x,y), font, font_size, font_color, font_thickness, cv2.LINE_AA)
     return img_text
 
+# Crops eyebrows from image
+# Input original image and mediapipe face keypoint coordinates
+# Returns 50x100 px image containing only eyebrows
 def cropDetection(image_input,detection):
-    # Yoinked from https://stackoverflow.com/questions/71094744/how-to-crop-face-detected-via-mediapipe-in-python
+    # Example from https://stackoverflow.com/questions/71094744/how-to-crop-face-detected-via-mediapipe-in-python
     image_rows, image_cols, _ = image_input.shape
     location = detection.location_data
     # Keypoint in order (right eye, left eye, nose tip, mouth center, right ear tragion, and left ear tragion) 
 
+    # Get bounding box coordinates
+    # Not used since transitioning to eyebrows only instead of full face
     """
     relative_bounding_box = location.relative_bounding_box
     rect_start_point = _normalized_to_pixel_coordinates(
@@ -63,8 +71,8 @@ def cropDetection(image_input,detection):
         rightEye.x, rightEye.y, image_cols,
         image_rows)
 
+    # crop image depending on distance between left and right eye
     try:
-
         xrightEye_relative,yrightEye_relative = rightEyePoint
         xleftEye_relative,yleftEye_relative = leftEyePoint
 
@@ -87,28 +95,26 @@ def cropDetection(image_input,detection):
 
 
         crop_img = image_input[int(ytop): int(ybot), int(xleft): int(xright)]
-        #cv2.imshow('cropped',crop_img)
-        #return crop_img
-
         resized_crop = cv2.resize(crop_img,(100,50))
-        #cv2.imshow('resized_cropped',resized_crop)
         return resized_crop
 
     except:
         return -1
 
+# Save image to dataset
+# Input image to save and expression name
+# No return, saves image with "expression" + "image number" as the filename
 def saveExpression(img,expression):
 
+    # Create file path with necissary directories.
     path = ("./dataset/" + expression)
-    count = len(fnmatch.filter(os.listdir(path), '*.jpg'))
-    filename = path + "/" + str(count) + ".jpg"
-    
-    print(filename)
-
-    # Create Path
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
 
+    # Append count to filename
+    count = len(fnmatch.filter(os.listdir(path), '*.jpg'))
+    filename = str(path) + "/" + str(count) + ".jpg"
+    print(filename)
 
     # Save Image
     if not cv2.imwrite(filename, img) :
@@ -125,10 +131,13 @@ with mp_face_detection.FaceDetection(
             # If loading a video, use 'break' instead of 'continue'.
             continue
 
+        # When not saving to dataset
         if capturing is False: 
             captureCount = 0
             text = "Press Space to capture " + expressions[expression_count] + " expression." 
             image = screenText(cv2.flip(image,1),"black",text)
+
+        # Saving images to dataset
         else:
             # To improve performance, optionally mark the image as not writeable to
             # pass by reference.
@@ -140,25 +149,31 @@ with mp_face_detection.FaceDetection(
             image.flags.writeable = True
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
             if results.detections:
-                detection = results.detections[0] # Grab only the closest face
-                cropped_img = cropDetection(image,detection)
-                mp_drawing.draw_detection(image, detection) 
-                if not isinstance(cropped_img, int): 
+                detection = results.detections[0] # Grab only the closest face to the camera
+                cropped_img = cropDetection(image,detection) #Crop out the eyebrows only
+                mp_drawing.draw_detection(image, detection) #Draw mediapipe keypoints and bounding box
+                if not isinstance(cropped_img, int): # cropped_img returned an image
                     saveExpression(cropped_img, expressions[expression_count - 1])
                     captureCount += 1
+            # Draw text on user interface
             text = "Capturing " + expressions[expression_count - 1] + " " +  str(captureCount) + "." 
             image = screenText(cv2.flip(image,1),"green",text)
             if not isinstance(cropped_img, int): 
+                #overlay eyebrow only crop onto user interface
                 image[0:50,0:100,:] = cropped_img
+
+            # Stop saving images once 500 are captured
             if captureCount >= 500:
                 capturing = False
-                if expression_count > 4:
-                    break
+                if expression_count == 5:
+                    expression_count=0 #Wrap to first expression after capturing the last
 
+        # Show user interface.
         cv2.imshow('MediaPipe',image)
-
         keyPress = cv2.waitKey(5) & 0xFF 
 
+        # User interface navigation
+        # Possible keypresses: left arrow, right arrow, spacebar, escape key. 
         if keyPress == 27: # escape key
             break
         elif capturing is False:
@@ -176,5 +191,3 @@ with mp_face_detection.FaceDetection(
                 #print(keyPress)
 
 cap.release()
-
-#cv2.resize(image,new_dimension)
