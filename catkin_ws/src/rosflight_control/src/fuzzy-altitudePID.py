@@ -6,9 +6,11 @@ from simple_pid import PID
 import numpy as np
 import skfuzzy.control as ctrl
 import time
+from rosflight_control.srv import controller_set
 
 altitude = None
-altitudeSetpoint = 10
+altitudeSetpoint = 5
+enable = True
 
 # create PID controller
 pid = PID(0.0015,0.0004,0.003, setpoint=altitudeSetpoint) # PID tunings will be overwritten with fuzzy logic
@@ -271,6 +273,13 @@ def altimeterFilter(baro):
 
 # Recieves altitude readings and outputs Elevator deflection commands
 def altitudePID(baro):
+
+    rospy.loginfo("enable:"+ str(enable) + " altitudeSetpoint: "+ str(altitudeSetpoint))
+
+    # Do nothing if disabled
+    if not enable:
+        return
+
     altitude = baro.altitude
 
     global startTime
@@ -311,14 +320,24 @@ def altitudePID(baro):
                     " Delta:"+str(round(pidDelta))
                     )
 
+def getControl(request):
+    global altitudeSetpoint
+    global enable
+    altitudeSetpoint = request.setPoint
+    enable = request.enable
+    return []
+
 if __name__ == '__main__':
     try:
         # Init Node
         rospy.init_node('fuzzy-altitudePID')
 
-        # Create listener
+        # Create barometer listener
         #rospy.Subscriber("/baro",Barometer, altimeterFilter) # with filter
         rospy.Subscriber("/baro",Barometer, altitudePID ) # bypass filter
+
+        # Create service 
+        service = rospy.Service("altHold_set" , controller_set, getControl)
 
         rospy.spin()
 
