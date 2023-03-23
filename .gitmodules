@@ -7,3 +7,12 @@
 [submodule "catkin_ws/src/rosflight_joy"]
 	path = catkin_ws/src/rosflight_joy
 	url = https://github.com/rosflight/rosflight_joy.git
+[submodule "catkin_ws/catkin_ws/src/rosflight_plugins"]
+	path = catkin_ws/catkin_ws/src/rosflight_plugins
+	url = https://github.com/byu-magicc/rosflight_plugins.git
+[submodule "src/rosflight_plugins"]
+	path = src/rosflight_plugins
+	url = https://github.com/byu-magicc/rosflight_plugins.git
+[submodule "catkin_ws/src/rosflight_plugins"]
+	path = catkin_ws/src/rosflight_plugins
+	url = https://github.com/byu-magicc/rosflight_plugins.git
