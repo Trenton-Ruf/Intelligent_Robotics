@@ -98,6 +98,7 @@ def resetState():
         set_state = rospy.ServiceProxy('/gazebo/set_model_state',SetModelState)
         resp = set_state(state_msg)
     except rospy.ServiceExeption, e:
+        print("Service call failed: %s" % e)
 
 
 def plotPID(x,y,gain):
@@ -106,15 +107,14 @@ def plotPID(x,y,gain):
     y_gauss = gaussian_filter1d(y, sigma=2)
     #peaks, properties = find_peaks(y_gauss,width=100,prominence=0.2)
     peaks, properties = find_peaks(y_gauss)
-    """
     if len(peaks) != 2:
+        peak_timestamps= [x[i] for i in peaks if i > 30000]
         if len(peak_timestamps) != 0:
             peak_values = [y_gauss[i] for i in peaks if i > 30000]
             plt.plot(peak_timestamps, peak_values, 'x',label="Peaks")
             avg_period = (peak_timestamps[-1] - peak_timestamps[0]) / len(peak_timestamps) 
             title += (' Period='+str(avg_period))
             rospy.loginfo("Plot Peaks: "+str(peaks))
-    """
 
     plt.plot(x,y, label = "Error Raw")
     plt.plot(x,y_gauss, label = "Error Gauss")
@@ -340,8 +340,8 @@ def attitudeControl(attitudeData):
                     )
     """
 
-    #findUltimateGain(elevatorPID,attitudeError.y)
-    testZieglerNichols(elevatorPID,attitudeError.y,0.0601,0.218)
+    findUltimateGain(elevatorPID,attitudeError.y)
+    #testZieglerNichols(elevatorPID,attitudeError.y,0.0601,0.218)
 
 
 def getControl(request):
