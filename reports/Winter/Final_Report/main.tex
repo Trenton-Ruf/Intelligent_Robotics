@@ -66,15 +66,12 @@
 
 %\vspace*{\fill}
 \renewcommand\thesubsection{\Roman{subsection}}
-%\section{Loading Pre-Trained Model}
-\section{Changes to Last Term's code}
+\section{Changes to last term's code}
 I made the fuzzy-altitude controller from last term into a ROS service server. This is to control the attitude setpoint and enable/disable the controller from a seperate ROS node. My plan is to have the altitude and attitude controller nodes given commands by a master "State Machine" node.
 
 
-\section{Quaternion Control}
-\subsection{Layout}
-The quaternion attitude controller was modeled after \underline{Quaternion Attitude Control System of Highly Maneuverable Aircraft} ~\cite{quat}.
-It is a cascading controller that takes a quaternion setpoint ($q_{sp}$) as the initial intput
+\section{Quaternion control}
+\subsection{controller layout}
 
 \begin{figure}[ht!] % [h] forces the figure to be output where it is defined in the code (it suppresses floating)
 	\centering
@@ -82,44 +79,96 @@ It is a cascading controller that takes a quaternion setpoint ($q_{sp}$) as the 
 	\caption{Quaternion-Based controller schematic from ~\cite{quat}}
 \end{figure}
 
+The quaternion attitude controller was modeled after the one described in 
+
+\underline{Quaternion Attitude Control System of Highly Maneuverable Aircraft} ~\cite{quat}. It is a cascading controller that takes a quaternion setpoint ($q_{sp}$) and quaterneon measured ($q_{meas}$) as the initial intputs to a proportional controller. The outputs of the proportional controller are angular velocity setpoints for their respective x, y, and z access PID controllers. The secondary inputs to these PIDs are the current measured angular velocities. The final outputs are the positions of the airplane control surfaces (rudder, aeleron, and elevator).
+
+\subsection{Translating to python}
+To perform quaternion math I installed the numpy-quaternion version 2020.11.2.17.0.49 since that was the last version to support python 2.7. 
+A dependancy of numpy-quaternion is numba, which also must be explicitly installed to version 0.34.0.
+For the mathmatical notation for each step, please check pages 4-6 of \underline{Quaternion Attitude Control System of Highly Maneuverable Aircraft} ~\cite{quat}. 
+Below is a snippet of code from the file attitude\_control\_gazebo.py that shows my implementation of these steps.
+
+\begin{lstlisting}[language=Python] 
+    import numpy as np
+    import quaternion
+
+    # Get measured attitude as quaternion
+    attitudeMeasured = np.quaternion(attitudeData.w,
+                                    attitudeData.x,
+                                    attitudeData.y,
+                                    attitudeData.z
+                                    ) 
+
+    # Get the attitude error 
+    attitudeError =  np.multiply(np.conjugate(attitudeMeasured), attitudeSetpoint)
+
+    # Since 2 rotations can describe every attitude,
+    # find the shorter of both rotations 
+    if attitudeError.w < 0:
+        np.negative(attitudeError)
+
+    # Assume derivative of attitude setpoint is proportional to the attitude error
+    attitudeSetpointDerivative = Kp * attitudeError
+
+    # Declare unrotated unit quaternion
+    qU = np.quaternion(1,0,0,0)  
+
+    # Get angular rate setpoints 
+    rateSetpoints = np.multiply( (2 * qU) , attitudeSetpointDerivative)
+
+    aeleronPID.setpoint  = rateSetpoints.x
+    elevatorPID.setpoint = rateSetpoints.y
+    rudderPID.setpoint   = rateSetpoints.z
+
+    # Get the positions for each control surface
+    msg.header.stamp = rospy.Time.now()
+    msg.x = aeleronPID(measuredangVelocity.x)
+    msg.y = elevatorPID(measuredangVelocity.y) 
+    msg.z = rudderPID(measuredangVelocity.z)
+
+    # Publish the ROS commands
+    publisher.publish(msg)
+\end{lstlisting}
+
+I've set the gain Kp for the first Proportion controller to be a static 1 for now. I'm thinking to adjust this gain depending on the airspeed of the plane. The control surfaces have more influence over the aircraft at higher airspeeds, so I think making this gain inversly proportional to airspeed will allow for better control.
+
+\subsection{Controller Tuning}
+I am attempting to tune each PID controller seperately. My plan was to find the "ultimate gain" as described by the Ziegler-Nicholas method. In which the Integral and Derivative Gains are set to 0, and the Proportional gain is adjusted until the system reaches a steady oscilation. The fist PID I tuned was for the elevator.I attempted to create a system to automatically find the ultimate gain. It works by recording the attitude error over time and determining when the error peaks appear. The more equadistant the peaks are then the more stable the oscillation. The peaks were found with the scipy.signal.find\_peaks() function from the SciPy python library. It is a deterministic sytem where the plane was given an initial orientation of 8 degrees pitched up, a setpoint of level pitch, and 8m/s of initial velocity. The system would alter the gain value between 60 second trials to try to find the most stable oscillation. There was a Lot of troubleshooting during this process. For Example:
+
+\begin{figure}[ht!] % [h] forces the figure to be output where it is defined in the code (it suppresses floating)
+	\centering
+	%\includegraphics[width=1.2\columnwidth]{PIDnoise.pdf} 
+	\includegraphics[trim={5cm 0 5cm 0},clip,width=\textwidth]{PIDnoise.pdf} 
+\end{figure}
+
+I thought the above graph showed a lot of noise so I added a 1-Dimensional Gaussian filter to help estimate actual error peaks. The filter is also a function of the SciPy library.
 
 
-\subsection{Roslaunch}
-I followed the guides on the official ROSflight website cover the installation of ROS, ROSflight, and the Gazebo simulator. I modified the default Roslaunch file for simulating a fixed-wing aircraft to include rosflight\_joy, a companion node that binds keystrokes to a simulated Radio Controller to manually maneuver the aircraft. The RC controller is necessary to "arm" the plane before the throttle can be activated. Since ROSflight is designed to run on an actual aircraft, there is a bit of configuration required begin simulations. You must calibrate the IMU and set the appropriate fixed wing parameters (i.e. tell ROSflight it is a plane and not a multi-copter). More details can be found in the official documentation. The modified roslaunch file called myfixedwing.launch includes links to two separate world files I created. Both of these worlds are airfields but unfortunately the computer I am running the simulation on currently cannot render them in real-time, so they are currently disabled.
+But it turns out it wasn't noise, but a consuquence of using gain values far too high.
 
-\subsection{Gazebo}
-The Gazebo installation should happen along side ROSflight, but you may encounter the following error when first running a simulation: 
+Another Picture HERE
 
-\small
-\color{red}
-[Err] [ModelDatabase.cc:235] No <database> tag in the model database database.config found here[\url{http://gazebosim.org/models/}]
+This shows a gain with a steady oscilation, but it is involves the airplane repeatedly stalling.
 
-[Err] [ModelDatabase.cc:294] Unable to download model manifests
+I added a criteria to be minimizing the average distance between the error peaks and troughs and this is the Ultimate gain my final system came up with. The peaks only show on the graph half way through the trial because I set it to analyse after 30 seconds into the trials, allowing it to stabilize before calculating any period.
+
+Plugging the ultimate gain into the Ziegler-Nichols formula:
 \\
-\color{black}
-\normalsize
-
-The location of the model database has changed but has not been reflected in the gazebo package yet. The fix is to redirect to the correct URL before running the any launch files:
-
-\small
-\color{green}
-export GAZEBO\_MODEL\_DATABASE\_URI=\url{http://models.gazebosim.org/}
-\\ \color{black}
-\normalsize
-
-The gazebo website is undergoing a major reconstruction at the moment. You should open up the URL above in a web browser too to check if the fix is still working.
-
-
-
-
-\section{altitude hold pid}
-The ROSflight node outputs a "Barometer" message that contains temperature, pressure, and altitude data. It also listens on the "Command" message for setting the plane's throttle, aileron, elevator, and rudder control surface positions. I created a new node called altitudePID that subscribes to the altitude reading and publishes an elevator position command. The mapping of altitude inputs to elevator outputs was done with a PID controller from the "simple\_pid" python library. The tuning of the PID gains was conducted with a trial and error approach. I followed the Ziegler–Nichols method for the most part. The altitude hold setpoint was hard-coded to be 10 Meters above the ground. All control surfaces have a deflection range of (-1,1). That said during normal flight they should never get close to the maximum ranges. When testing full elevator deflection in flight the plane immediately turns 90 degrees and stalls.
-
-\section{fuzzy pid!}
-The altitudePID node works well for holding altitude while the wings are level, but an abrupt bank will begin large altitude oscillations. I believe this is due to the amount vertical lift that the elevator can influence being decreased with larger bank angles. The PID controller was tuned for maximum lift influence, so it makes sense that it will have problems when it falls out its ideal environment. To fix this issue the gains of the PID controller need to be altered during operation.  
+$K_p = 0.7K_u$
 \\
+$K_i = 1.2K_u/T_u$
+\\
+$K_d = 0.075K_uT_u$
+\\
+The controller gives minimal overshoot and stabalizes with around 0 error. I am very satisfied with this result.
 
-I found a white paper that covers an implementation of fuzzy-inference for airplane pitch control~\cite{fuzzy}. Since pitch is controlled with the elevator position I believed it would also work as an altitude controller. I created the "fuzzy-altitudePID" node that takes the fuzzy logic rules presented in the paper and integrates them with the altitudePID node from earlier. While the rules where kept the same I changed the ranges of all other parameters. All of these values where found from experimentation. For instance, the error delta range was determined by sending large manual inputs to the plane in flight to see what maximum and minimum error values could be. The tuning method from the original altitudePID node did not work for the fuzzy rule set. 
+\section{Things to do}
+When trying to tune the system I was initually using the rosflight simulated IMU. It has a built in Kalman filter, but even so the attitude would drift about 1 degree every 3 minutes. For a bandaid fix I changed from using the IMU to getting the exact attitude and velocity information from the Gazebo simulation's model. The IMU method will work but I will need to supliment the IMU data with a seperate truth reference. I'll try using the simulated magnatometer.
+
+After tuning the aeleron and rudder PIDs, next term will be focused on integrating the altitude and attitude controllers with the eyebrow detection convolution network. My current plan is to use a quaternion rotation $p'=qpq^{-1}$ to control pitch up/down and bank left/right. I will have the altitude controller do the "neutral" state.
+
+I mostly work with embedded C. Therefore I'm still learning a lot about python. Something irritating I've found is that python has no static variables. I got around that by making too many variables global. In the future I will make functions that requires a static variable to be part of a class instead.
 
 \subsection{code}
 
@@ -128,7 +177,7 @@ All files related to this project can be found at:
 \url{https://github.com/Trenton-Ruf/Intelligent_Robotics}
 
 \lstinputlisting[
-	caption= altitudePID, % Caption above the listing
+	caption=attitude\_control\_gazebo.py, % Caption above the listing
 	%label=lst:test, % Label for referencing this listing
 	language=Python, % Use Perl functions/syntax highlighting
 	frame=single, % Frame around the code listing
@@ -138,22 +187,7 @@ All files related to this project can be found at:
 	numbers=left, % Line numbers on left
 	numberstyle=\tiny, % Line numbers styling
 	basicstyle=\footnotesize
-	]{../../../catkin_ws/src/rosflight_control/src/altitudePID.py}
-
-\lstinputlisting[
-	caption= fuzzy-altitudePID, % Caption above the listing
-	%label=lst:test, % Label for referencing this listing
-	language=Python, % Use Perl functions/syntax highlighting
-	frame=single, % Frame around the code listing
-	breaklines=true,
-	postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},	
-	showstringspaces=false, % Don't put marks in string spaces
-	numbers=left, % Line numbers on left
-	numberstyle=\tiny, % Line numbers styling
-	basicstyle=\footnotesize
-	]{../../../catkin_ws/src/rosflight_control/src/fuzzy-altitudePID.py}
-
-
+	]{../../../catkin_ws/src/rosflight_control/src/attitude_control_gazebo.py}
 \clearpage
 \medskip
 
