@@ -38,7 +38,7 @@ Kp = 1
 
 # create PID controllers
 #elevatorPID = PID(0.055,0,0, setpoint=0)
-elevatorPID = PID(0.1,0,0, setpoint=0) # getting integral
+elevatorPID = PID(0.01,0,0, setpoint=0) # getting integral
 
 #aeleronPID = PID(0.1,0,0, setpoint=0)
 #rudderPID = PID(0.1,0,0, setpoint=0)
@@ -71,7 +71,7 @@ def getFixedwingHeight():
         height = float(resp.pose.position.z)
         rospy.loginfo("fixedwing height: "+str(height))
         return height
-        
+
     except rospy.ServiceExeption, e:
         print("Service call failed: %s" % e)
 
@@ -98,23 +98,24 @@ def resetState():
         set_state = rospy.ServiceProxy('/gazebo/set_model_state',SetModelState)
         resp = set_state(state_msg)
     except rospy.ServiceExeption, e:
-        print("Service call failed: %s" % e)
 
 
 def plotPID(x,y,gain):
-    title = 'Kp='+str(gain)
-    y_gauss = gaussian_filter1d(y, sigma=150)
-    #peaks, properties = find_peaks(y_gauss,width=100,prominence=0.2)
-    peaks, properties = find_peaks(y_gauss,prominence=0.0009)
-    if len(peaks) != 0:
-        peak_timestamps = [x[i] for i in peaks]
-        peak_values = [y_gauss[i] for i in peaks]
-        plt.plot(peak_timestamps, peak_values, 'x',label="Peaks")
-        avg_period = (peak_timestamps[-1] - peak_timestamps[0]) / len(peak_timestamps) 
-        title += (' Period='+str(avg_period))
-        rospy.loginfo("Plot Peaks: "+str(peaks))
-
     plt.rcParams["figure.figsize"] = (20,5) 
+    title = 'Kp='+str(gain)
+    y_gauss = gaussian_filter1d(y, sigma=2)
+    #peaks, properties = find_peaks(y_gauss,width=100,prominence=0.2)
+    peaks, properties = find_peaks(y_gauss)
+    """
+    if len(peaks) != 2:
+        if len(peak_timestamps) != 0:
+            peak_values = [y_gauss[i] for i in peaks if i > 30000]
+            plt.plot(peak_timestamps, peak_values, 'x',label="Peaks")
+            avg_period = (peak_timestamps[-1] - peak_timestamps[0]) / len(peak_timestamps) 
+            title += (' Period='+str(avg_period))
+            rospy.loginfo("Plot Peaks: "+str(peaks))
+    """
+
     plt.plot(x,y, label = "Error Raw")
     plt.plot(x,y_gauss, label = "Error Gauss")
     plt.title(title)
@@ -127,14 +128,16 @@ def plotPID(x,y,gain):
 
 def findPeriodDeviation(_x,_y):
     deviation = -1
-    y_gauss = gaussian_filter1d(_y, sigma=150)
+    y_gauss = gaussian_filter1d(_y, sigma=2)
     #peaks, properties = find_peaks(y_gauss,width=100,prominence=0.22)
-    peaks, properties = find_peaks(y_gauss,prominence=0.0009)
+    peaks, properties = find_peaks(y_gauss)
     rospy.loginfo("Peak indicies: "+str(peaks))
     if len(peaks) > 2:
-        peak_timestamps = [_x[i] for i in peaks if i > 3000]
-        avg_period = (peak_timestamps[-1] - peak_timestamps[0]) / len(peak_timestamps) 
-
+        peak_timestamps = [_x[i] for i in peaks if i > 30000]
+        if len(peak_timestamps) < 10:
+            return deviation
+        avg_period = (peak_timestamps[-1] - peak_timestamps[0]) / (len(peak_timestamps) -1 ) 
+        
         #peak_debug = [_y[i] for i in peaks]
         #rospy.loginfo("Peak error: "+str(peak_debug))
 
@@ -147,15 +150,24 @@ def findPeriodDeviation(_x,_y):
 
 def findHeightDeviation(_x,_y):
     deviation = -1
-    peaks, properties = find_peaks(_y,width=100,prominence=0.22)
-    rospy.loginfo("Peak indicies: "+str(peaks))
+    y_gauss = gaussian_filter1d(_y, sigma=2)
+    #peaks, properties = find_peaks(y_gauss,width=100,prominence=0.22)
+    peaks, properties = find_peaks(y_gauss)
+    troughs, properties = find_peaks(-y_gauss)
+    #rospy.loginfo("Peak indicies: "+str(peaks))
     if len(peaks) > 2:
-        peak_heights = [_y[i] for i in peaks]
-        avg_height = (peak_heights[-1] - peak_heights[0]) / len(peak_heights) 
+        peak_heights = [_y[i] for i in peaks if i > 30000]
+        trough_depths = [_y[i] for i in troughs if i > 30000]
+        if len(peak_heights) < 10:
+            return deviation
+        avg_height = sum(peak_heights) / len(peak_heights) 
+        avg_depth = sum(trough_depths) / len(trough_depths) 
         deviation=0
         for index,height in enumerate(peak_heights):
             deviation += abs(avg_height - height)
-        return deviation/len(peak_heights)
+        for index,depth in enumerate(trough_depths):
+            deviation += abs(avg_depth - depth)
+        return deviation * 100 * (avg_height - avg_depth)
     return deviation
 
 
@@ -167,10 +179,10 @@ x=[]
 best_gain = -1
 old_best_gain = -1
 inc_gain = 0.01
-curr_gain = 0.1
-target_gain = 0.2
-precision = 2 # decimal points of precision
-precision_count = 1
+curr_gain = 0.01
+target_gain = 0.1
+precision = 5 # decimal points of precision
+precision_count = 3
 trial_duration = 60
 def findUltimateGain(pid,error):
     global best_gain
@@ -200,11 +212,11 @@ def findUltimateGain(pid,error):
 
     # Test curr against best
     deviation = findPeriodDeviation(x,y)
-    #deviation = findHeightDeviation(x,y)
+    deviation += findHeightDeviation(x,y)
     rospy.loginfo("deviation: "+str(deviation))
     if deviation >=0 and getFixedwingHeight() > 3:
         ult_deviation = findPeriodDeviation(ult_x,ult_y)
-        #ult_deviation = findHeightDeviation(ult_x,ult_y)
+        ult_deviation += findHeightDeviation(ult_x,ult_y)
         rospy.loginfo("ult_deviation: "+str(ult_deviation))
         if ult_deviation < 0 or deviation < ult_deviation:
             best_gain = curr_gain
@@ -329,7 +341,7 @@ def attitudeControl(attitudeData):
     """
 
     #findUltimateGain(elevatorPID,attitudeError.y)
-    testZieglerNichols(elevatorPID,attitudeError.y,0.11,0.075)
+    testZieglerNichols(elevatorPID,attitudeError.y,0.0601,0.218)
 
 
 def getControl(request):
@@ -356,5 +368,6 @@ if __name__ == '__main__':
         resetState()
         rospy.spin()
 
-    except rospy.ROSInterruptException:
+    #except rospy.ROSInterruptException:
+    except rospy.ServiceExeption, e:
         pass
