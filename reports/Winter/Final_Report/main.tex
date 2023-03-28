@@ -1,4 +1,4 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Wenneker Assignment
 % LaTeX Template
 % Version 2.0 (12/1/2019)
@@ -67,10 +67,14 @@
 %\vspace*{\fill}
 \renewcommand\thesubsection{\Roman{subsection}}
 \section{Changes to last term's code}
-I made the fuzzy-altitude controller from last term into a ROS service server. This is to control the attitude setpoint and enable/disable the controller from a seperate ROS node. My plan is to have the altitude and attitude controller nodes given commands by a master "State Machine" node.
+I made the fuzzy-altitude controller from last term into a ROS service server. This is to control the attitude setpoint and enable/disable the controller from a separate ROS node. My plan is to have the altitude and attitude controller nodes given commands by a master "State Machine" node.
 
 
 \section{Quaternion control}
+
+\subsection{Why quaternion?}
+Traditional attitude controllers for aircraft use Euler angles to determine orientation. Euler angles are great because they are intuitive to conceptualize and implement, but they have a major drawback. When an aircraft pitches up 90 degrees; yaw changes can no longer be tracked. Effectively losing a degree of freedom. Quaternions do not have this issue. But unlike Euler angles they are (in my experience) near impossible to visualize and conceptualize. Though surprisingly easy to implement as a controller.
+
 \subsection{controller layout}
 
 \begin{figure}[ht!] % [h] forces the figure to be output where it is defined in the code (it suppresses floating)
@@ -81,13 +85,46 @@ I made the fuzzy-altitude controller from last term into a ROS service server. T
 
 The quaternion attitude controller was modeled after the one described in 
 
-\underline{Quaternion Attitude Control System of Highly Maneuverable Aircraft} ~\cite{quat}. It is a cascading controller that takes a quaternion setpoint ($q_{sp}$) and quaterneon measured ($q_{meas}$) as the initial intputs to a proportional controller. The outputs of the proportional controller are angular velocity setpoints for their respective x, y, and z access PID controllers. The secondary inputs to these PIDs are the current measured angular velocities. The final outputs are the positions of the airplane control surfaces (rudder, aeleron, and elevator).
+\underline{Quaternion Attitude Control System of Highly Maneuverable Aircraft} ~\cite{quat}. It is a cascading controller that takes a quaternion setpoint ($q_{sp}$) and quaternion measured ($q_{meas}$) as the initial inputs to a proportional controller. The outputs of the proportional controller are angular velocity setpoints for their respective x, y, and z access PID controllers. The secondary inputs to these PIDs are the current measured angular velocities. The final outputs are the positions of the airplane control surfaces (rudder, aileron, and elevator).
+
+\subsection{step by step}
+For the mathematical notation and in depth look for each step, please check pages 4-6 of \underline{Quaternion Attitude Control System of Highly Maneuverable Aircraft} ~\cite{quat}. 
+
+Here is my simplified step by step process:
+\begin{enumerate}
+	\item Determine an orientation setpoint.
+	\item Find the orientation error by taking the Hamilton product between the conjugate of the measured orientation and the orientation setpoint.
+	\begin{enumerate}[label*=\arabic*.]
+		\item The measured orientation will be received from the onboard IMU.
+	\end{enumerate}
+	\item If the scaler term of the orientation error quaternion is negative then set the orientation error quaternion equal to the negation of itself (not the complex conjugate!).
+	\begin{enumerate}[label*=\arabic*.]
+		\item This step is necissary because every quaternion orientation can be described by two separate rotations. This makes sure the shortest of the two rotations will be used. 
+	\end{enumerate}
+	\item Find the setpoint derivative by taking the proportional gain and multiplying it with the orientation error.
+	\begin{enumerate}[label*=\arabic*.]
+		\item The proportional gain is arbitrary. I have set it to 1.
+		\item Since the derivative of direction is velocity, this derivative will result in angular velocity rates for each axis.
+	\end{enumerate}
+	\item Find the angular velocity setpoints for their respective axis by taking the Hamilton product of 2 multiplied by the unit quaternion conjugate and the setpoint derivative.
+	\begin{enumerate}[label*=\arabic*.]
+		\item The unit quaternion formed when  w=1, i=0, j=0, and k=0.
+		\item Since the unit quaternion conjugate is equal to itself, just use the unit quaternion.
+	\end{enumerate}
+	\item Use the resulting rate setpoints as the setpoints to their respective axis PID controller.
+	\begin{enumerate}[label*=\arabic*.]
+		\item Use the current angular velocity readings from the IMU for the measured values.
+	\end{enumerate}
+	\item Send the outputs of each PID controller to their respective control surface. X to aileron, Y to Elevator, and Z to Rudder.
+\end{enumerate}
+\clearpage
+
 
 \subsection{Translating to python}
 To perform quaternion math I installed the numpy-quaternion version 2020.11.2.17.0.49 since that was the last version to support python 2.7. 
-A dependancy of numpy-quaternion is numba, which also must be explicitly installed to version 0.34.0.
-For the mathmatical notation for each step, please check pages 4-6 of \underline{Quaternion Attitude Control System of Highly Maneuverable Aircraft} ~\cite{quat}. 
-Below is a snippet of code from the file attitude\_control\_gazebo.py that shows my implementation of these steps.
+A dependency of numpy-quaternion is numba, which also must be explicitly installed to version 0.34.0.
+This quaternion library simplifies the process of performing quaternion math. It adds quaternions as a datatype to numpy. Hamilton products and quaternion conjugations become single function calls.
+Below is a snippet of code from the file attitude\_control\_gazebo.py that shows my implementation of the previous section's steps.
 
 \begin{lstlisting}[language=Python] 
     import numpy as np
@@ -117,6 +154,7 @@ Below is a snippet of code from the file attitude\_control\_gazebo.py that shows
     # Get angular rate setpoints 
     rateSetpoints = np.multiply( (2 * qU) , attitudeSetpointDerivative)
 
+    # Give each PID controller the new setpoints
     aeleronPID.setpoint  = rateSetpoints.x
     elevatorPID.setpoint = rateSetpoints.y
     rudderPID.setpoint   = rateSetpoints.z
@@ -131,27 +169,43 @@ Below is a snippet of code from the file attitude\_control\_gazebo.py that shows
     publisher.publish(msg)
 \end{lstlisting}
 
-I've set the gain Kp for the first Proportion controller to be a static 1 for now. I'm thinking to adjust this gain depending on the airspeed of the plane. The control surfaces have more influence over the aircraft at higher airspeeds, so I think making this gain inversly proportional to airspeed will allow for better control.
+I've set the gain Kp for the first Proportion controller to be a static 1 for now. I'm thinking to adjust this gain depending on the airspeed of the plane. The control surfaces have more influence over the aircraft at higher airspeeds, so I think making this gain inversely proportional to airspeed will allow for better control.
 
 \subsection{Controller Tuning}
-I am attempting to tune each PID controller seperately. My plan was to find the "ultimate gain" as described by the Ziegler-Nicholas method. In which the Integral and Derivative Gains are set to 0, and the Proportional gain is adjusted until the system reaches a steady oscilation. The fist PID I tuned was for the elevator.I attempted to create a system to automatically find the ultimate gain. It works by recording the attitude error over time and determining when the error peaks appear. The more equadistant the peaks are then the more stable the oscillation. The peaks were found with the scipy.signal.find\_peaks() function from the SciPy python library. It is a deterministic sytem where the plane was given an initial orientation of 8 degrees pitched up, a setpoint of level pitch, and 8m/s of initial velocity. The system would alter the gain value between 60 second trials to try to find the most stable oscillation. There was a Lot of troubleshooting during this process. For Example:
+
+I am attempting to tune each PID controller separately. My plan was to find the "ultimate gain" as described by the Ziegler-Nicholas method. In which the Integral and Derivative Gains are set to 0, and the Proportional gain is adjusted until the system reaches a steady oscillation. The fist PID I tuned was for the elevator. I attempted to create a system to automatically find the ultimate gain. It works by recording the attitude error over time and determining when the error peaks appear. The more equidistant the peaks are then the more stable the oscillation. The peaks were found with the scipy.signal.find\_peaks() function from the SciPy python library. \\
+
+It is a deterministic system where the airplane was given an initial orientation of 8 degrees pitched up, a setpoint of level pitch, and 8m/s of initial velocity. The system would alter the gain value between 60 second trials to try to find the most stable oscillation. If the airplane lands on the ground then that trial has failed. There was a Lot of troubleshooting during this process. For Example:
 
 \begin{figure}[ht!] % [h] forces the figure to be output where it is defined in the code (it suppresses floating)
 	\centering
-	%\includegraphics[width=1.2\columnwidth]{PIDnoise.pdf} 
 	\includegraphics[trim={5cm 0 5cm 0},clip,width=\textwidth]{PIDnoise.pdf} 
 \end{figure}
 
 I thought the above graph showed a lot of noise so I added a 1-Dimensional Gaussian filter to help estimate actual error peaks. The filter is also a function of the SciPy library.
 
+\begin{figure}[ht!] % [h] forces the figure to be output where it is defined in the code (it suppresses floating)
+	\centering
+	\includegraphics[trim={5cm 0 5cm 0},clip,width=\textwidth]{PIDnoiseGauss.pdf} 
+\end{figure}
 
-But it turns out it wasn't noise, but a consuquence of using gain values far too high.
+But it turns out it wasn't noise, but a consequence of using gain values far too high.
 
-Another Picture HERE
+\clearpage
 
-This shows a gain with a steady oscilation, but it is involves the airplane repeatedly stalling.
+\begin{figure}[ht!] % [h] forces the figure to be output where it is defined in the code (it suppresses floating)
+	\centering
+	\includegraphics[trim={5cm 0 5cm 0},clip,width=\textwidth]{PIDstalling.pdf} 
+\end{figure}
 
-I added a criteria to be minimizing the average distance between the error peaks and troughs and this is the Ultimate gain my final system came up with. The peaks only show on the graph half way through the trial because I set it to analyse after 30 seconds into the trials, allowing it to stabilize before calculating any period.
+The graph above shows a gain with a steady oscillation, but it is involves the airplane repeatedly stalling.
+
+\begin{figure}[ht!] % [h] forces the figure to be output where it is defined in the code (it suppresses floating)
+	\centering
+	\includegraphics[trim={5cm 0 5cm 0},clip,width=\textwidth]{PIDultimate.pdf} 
+\end{figure}
+
+I added a criteria to be minimizing the average distance between the error peaks and troughs and this is the Ultimate gain my final system came up with. The peaks only show on the graph half way through the trial because I set it to analyse after 30 seconds into the trials, allowing it to stabilize before calculating any period.\\
 
 Plugging the ultimate gain into the Ziegler-Nichols formula:
 \\
@@ -160,13 +214,19 @@ $K_p = 0.7K_u$
 $K_i = 1.2K_u/T_u$
 \\
 $K_d = 0.075K_uT_u$
-\\
-The controller gives minimal overshoot and stabalizes with around 0 error. I am very satisfied with this result.
+
+\begin{figure}[ht!] % [h] forces the figure to be output where it is defined in the code (it suppresses floating)
+	\centering
+	\includegraphics[trim={5cm 0 5cm 0},clip,width=\textwidth]{PIDfinal.pdf} 
+\end{figure}
+
+The controller gives minimal overshoot and stabilizes with minimal steady state error. I am very satisfied with this result.
+\clearpage
 
 \section{Things to do}
-When trying to tune the system I was initually using the rosflight simulated IMU. It has a built in Kalman filter, but even so the attitude would drift about 1 degree every 3 minutes. For a bandaid fix I changed from using the IMU to getting the exact attitude and velocity information from the Gazebo simulation's model. The IMU method will work but I will need to supliment the IMU data with a seperate truth reference. I'll try using the simulated magnatometer.
+When trying to tune the system I was initially using the rosflight simulated IMU. It has a built in Kalman filter. The filter should get rid of any extraneous errors from the accelerometer and gyroscopic sensors, but even so the attitude would drift about 1 degree every 3 minutes. For a band-aid fix I changed from using the IMU to getting the exact attitude and velocity information from the Gazebo simulation's model. The IMU method will work but I will need to supplement the IMU data with a separate truth reference. I'll try using the simulated magnetometer sensor.\\
 
-After tuning the aeleron and rudder PIDs, next term will be focused on integrating the altitude and attitude controllers with the eyebrow detection convolution network. My current plan is to use a quaternion rotation $p'=qpq^{-1}$ to control pitch up/down and bank left/right. I will have the altitude controller do the "neutral" state.
+After tuning the aileron and rudder PIDs, next term will be focused on integrating the altitude and attitude controllers with the eyebrow detection convolution network. My current plan is to use a quaternion rotation $p'=qpq^{-1}$ to control pitch up/down and bank left/right. I will have the altitude controller do the "neutral" state. \\
 
 I mostly work with embedded C. Therefore I'm still learning a lot about python. Something irritating I've found is that python has no static variables. I got around that by making too many variables global. In the future I will make functions that requires a static variable to be part of a class instead.
 

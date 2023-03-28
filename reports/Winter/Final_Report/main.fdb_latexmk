@@ -1,13 +1,13 @@
 # Fdb version 3
-["bibtex main"] 1679887762 "main.aux" "main.bbl" "main" 1679887764
+["bibtex main"] 1679984463 "main.aux" "main.bbl" "main" 1679985343
   "/usr/share/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1650181511 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1679887764 3924 27923f63443ee4bdc1aad518c06c0210 "pdflatex"
+  "main.aux" 1679985343 4619 ae2f4c7cbb291f395fe858a8b9f2a666 "pdflatex"
   "resources.bib" 1679884116 937 3d4e5bc87dd85450c145b80d19122ba6 ""
   (generated)
   "main.bbl"
   "main.blg"
-["pdflatex"] 1679887762 "main.tex" "main.pdf" "main" 1679887764
-  "../../../catkin_ws/src/rosflight_control/src/attitude_control_gazebo.py" 1679866646 11032 bc1aeee2eff9927b5e21e5c2a1951a4e ""
+["pdflatex"] 1679985340 "main.tex" "main.pdf" "main" 1679985343
+  "../../../catkin_ws/src/rosflight_control/src/attitude_control_gazebo.py" 1679985323 11639 e1374f530129ad5e66ee86233a2deb6a ""
   "/usr/share/texmf-dist/fonts/enc/dvips/base/8r.enc" 1650183167 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1650183167 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1650183167 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -52,6 +52,7 @@
   "/usr/share/texmf-dist/fonts/type1/adobe/utopia/putr8a.pfb" 1650183167 36507 bc28f9f0cdba50a8a348a6e4dc8a5378 ""
   "/usr/share/texmf-dist/fonts/type1/adobe/utopia/putri8a.pfb" 1650183167 37756 112837e95d30cb64c320437ea63bd4d6 ""
   "/usr/share/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb" 1650183167 169670 48d12e69c9a3b23c81f6d703ccbd4554 ""
+  "/usr/share/texmf-dist/fonts/type1/public/fourier/fourier-ml.pfb" 1650179560 14981 0a68017b66294a0c7d78935574145a1c ""
   "/usr/share/texmf-dist/fonts/type1/public/fourier/fourier-ms.pfb" 1650179560 22238 87e9c1bfb269d3da7d96d9f4df8849d2 ""
   "/usr/share/texmf-dist/fonts/vf/public/fourier/futb8t.vf" 1650179560 2168 d2ac693e07cd79dbc2b914caee3e8df0 ""
   "/usr/share/texmf-dist/fonts/vf/public/fourier/futmii.vf" 1650179560 1332 62b87bc157157fd0616b8398929f8399 ""
@@ -250,12 +251,16 @@
   "/usr/share/texmf-dist/web2c/texmf.cnf" 1650183167 39911 2da6c67557ec033436fe5418a70a8a61 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1668458170 4408072 42ceaa83bae76aebad711d3f3dd7f55f ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1668458156 2927663 ce161f56a87f639e15ba92e822ca3fe4 ""
+  "PIDfinal.pdf" 1679889115 67985 1c0656fdc9253493951765c498853b46 ""
   "PIDnoise.pdf" 1679594110 78550 3f60be4a67df9c76c50de4292bba4319 ""
+  "PIDnoiseGauss.pdf" 1679889115 130179 c69e4f6345eeb9295c53586dbfbefa72 ""
+  "PIDstalling.pdf" 1679890713 114483 1f4491b38416d80c4924275f29b8bd4d ""
+  "PIDultimate.pdf" 1679889115 28929 0a3d01cd5db6888eb2df6e17fe424d10 ""
   "QuatSchematicPID.png" 1679864373 119198 58c709e35e538119c2bb8e248be04ac0 ""
-  "main.aux" 1679887764 3924 27923f63443ee4bdc1aad518c06c0210 "pdflatex"
-  "main.bbl" 1679887762 1099 8b653c403385e990c1a9d08e8bb4163a "bibtex main"
+  "main.aux" 1679985343 4619 ae2f4c7cbb291f395fe858a8b9f2a666 "pdflatex"
+  "main.bbl" 1679984463 1099 8b653c403385e990c1a9d08e8bb4163a "bibtex main"
   "main.out" 0 -1 0 "pdflatex"
-  "main.tex" 1679887757 9764 d2b7957505361cc7a5c59bc93235e799 ""
+  "main.tex" 1679984921 13572 83bb9201748b40b4a21dc55b4b0f0520 ""
   "structure.tex" 1679864373 3842 4bb7de79dfe0271dca618ce4799a3ab0 ""
   (generated)
   "main.aux"
