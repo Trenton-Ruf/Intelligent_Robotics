@@ -309,20 +309,21 @@ def attitudeControl(attitudeData):
         np.negative(attitudeError)
 
     # Assume derivative of attitude setpoint is proportional to the attitude error
-    #attitudeSetpointDerivative = np.multiply(Kp, attitudeError)  
     attitudeSetpointDerivative = Kp * attitudeError
 
     # Get angular rate setpoints 
     rateSetpoints = np.multiply( (2 * qU) , attitudeSetpointDerivative)
 
+    # Give the PID controllers the new setpoints
     aeleronPID.setpoint  = rateSetpoints.x
     elevatorPID.setpoint = rateSetpoints.y
     rudderPID.setpoint   = rateSetpoints.z
 
+    # Get the Control Surface Deflections from the PID output
     msg.header.stamp = rospy.Time.now()
-    msg.x = aeleronPID(attitudeData.twist.twist.angular.x) # potentially wrong
+    msg.x = aeleronPID(attitudeData.twist.twist.angular.x)
     msg.y = elevatorPID(attitudeData.twist.twist.angular.y) 
-    msg.z = rudderPID(attitudeData.twist.twist.angular.z) # potentially wrong
+    msg.z = rudderPID(attitudeData.twist.twist.angular.z) 
     publisher.publish(msg)
 
     # Send info to the console for debugging
@@ -340,8 +341,8 @@ def attitudeControl(attitudeData):
                     )
     """
 
-    findUltimateGain(elevatorPID,attitudeError.y)
-    #testZieglerNichols(elevatorPID,attitudeError.y,0.0601,0.218)
+    #findUltimateGain(elevatorPID,attitudeError.y)
+    testZieglerNichols(elevatorPID,attitudeError.y,0.0601,0.218)
 
 
 def getControl(request):
