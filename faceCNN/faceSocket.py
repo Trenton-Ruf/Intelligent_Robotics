@@ -121,7 +121,7 @@ model = load_model("./faceModel")
 
 # Socket connection initialization
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((192.168.106.3, 8745))
+s.connect(("192.168.106.114", 8745))
 msg = s.recv(64)
 print(msg.decode("utf-8"))
 
@@ -151,17 +151,20 @@ with mp_face_detection.FaceDetection(
             if isinstance(cropped_img, int):
                 text = "Expression: failed"
                 image = screenText(cv2.flip(image,1),"black",text)
-                s.send("failed","utf-8") # failed expression
+                msg = "failed"
+                s.send(msg.encode("utf-8"))
             else:
                 expression = checkExpression(cropped_img, model) 
                 mp_drawing.draw_detection(image, detection) 
                 text = "Expression: " + expression 
                 image = screenText(cv2.flip(image,1),"green",text)
-                s.send(expression,"utf-8") # good expression
+                msg = expression
+                s.send(msg.encode("utf-8"))
         else:
             text = "Expression: failed"
             image = screenText(cv2.flip(image,1),"black",text)
-            s.send("failed","utf-8") # failed expression
+            msg = "failed"
+            s.send(msg.encode("utf-8"))
          
 
         cv2.imshow('MediaPipe',image)
