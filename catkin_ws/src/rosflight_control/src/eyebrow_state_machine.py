@@ -90,8 +90,8 @@ class stateMachine():
 
 
         def rotate(self, rotation):
-            # multiply setpoint quaternion by rotation quaternion
-            self.setpoint = self.setpoint * rotation
+            # Quaternion rotation p'= q*p*q^-1
+            self.setpoint = rotation * self.setpoint * np.conjugate(rotation)
             
 
         def loop(self):
