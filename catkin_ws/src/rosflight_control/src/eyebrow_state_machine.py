@@ -44,13 +44,13 @@ class stateMachine():
 
     def __init__(self):
         # Set inital State
-        self.initialState = neutralState 
+        self.initialState = self.neutralState 
         self.currentState = self.initialState
         
         self.prevState = None
 
         # Timing
-        rotationInterval = 0.1 # Seconds
+        self.rotationInterval = 0.1 # Seconds
         self.startTime = time.time() # Maybe convert to time.time_ns() for precision
 
         self.orientation = None
@@ -59,34 +59,37 @@ class stateMachine():
         # Initialize rotation quaternions
         degreesRot = 2
         thetaRot = degreesRot * math.pi / 180
-        rotateUp = eulerToQuat(0, thetaRot, 0)
-        rotateDown = eulerToQuat(0, - thetaRot, 0)
-        rotateLeft = eulerToQuat(- thetaRot, 0, 0)
-        rotateRight = eulerToQuat(thetaRot, 0, 0)
+        self.rotateUp = eulerToQuat(0, thetaRot, 0)
+        self.rotateDown = eulerToQuat(0, - thetaRot, 0)
+        self.rotateLeft = eulerToQuat(- thetaRot, 0, 0)
+        self.rotateRight = eulerToQuat(thetaRot, 0, 0)
 
         # Initialize socket listener
         # Used for recieving eyebrow states from a client
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.bind((192.168.106.3, 8745))
+        #self.s.bind(("0.0.0.0", 8745))
+        #self.s.bind(("socket.gethostname()", 8745))
+        self.s.bind(("192.168.106.114", 8745))
         self.s.listen(1)
         self.socketConnected = False
 
 
-        def connectSocket(self):
-            self.clientsocket, self.address = self.s.accept()
-            print(f"Connection from {self.address} established")
-            self.clientsocket.send(bytes("Connected to eyebrow_control server","utf-8"))
-            self.socketConnected = True
-        
+    def connectSocket(self):
+        self.clientsocket, self.address = self.s.accept()
+        print("Connection from " + str(self.address) +" established")
+        msg ="Connected to eyebrow_control server" 
+        self.clientsocket.send(msg.encode("utf-8"))
+        self.socketConnected = True
+    
 
-        def setOrientation(self, attitudeData):
-            self.orientation = np.quaternion(attitudeData.pose.pose.orientation.w,
-                                            attitudeData.pose.pose.orientation.x,
-                                            attitudeData.pose.pose.orientation.y,
-                                            attitudeData.pose.pose.orientation.z) 
+    def setOrientation(self, attitudeData):
+        self.orientation = np.quaternion(attitudeData.pose.pose.orientation.w,
+                                        attitudeData.pose.pose.orientation.x,
+                                        attitudeData.pose.pose.orientation.y,
+                                        attitudeData.pose.pose.orientation.z) 
 
-        def stateTransition(self, newState):
-            self.currentState = newState
+    def stateTransition(self, newState):
+        self.currentState = newState
 
 
         def rotate(self, rotation):
@@ -94,40 +97,45 @@ class stateMachine():
             self.setpoint = rotation * self.setpoint * np.conjugate(rotation)
             
 
-        def loop(self):
+    def loop(self):
+        # TODO socket timeouts
+        if not self.socketConnected:
+            self.connectSocket()
+            self.currentState = self.failedState
+        else:
+            msg = self.clientsocket.recv(64)
+            self.currentState = self.stateSocketDict[ msg.decode("utf-8") ]
 
-            if not self.socketConnected:
-                connectSocket()
-                self.currentState = self.failedState
-            else:
-                msg = self.s.recv(64)
-                self.currentState = stateSocketDict(msg.decode("utf-8"))
+        if (self.startTime + self.rotationInterval <= time.time()):
+            # Reset timer
+            self.startTime = time.time()
 
-            if (startTime + 0.1 >= time.time()):
-                # Check for Lost State transition
-                if self.prevState != self.failedState and self.currentState == self.failedState:
-                    # TODO Start Altitude Hold
-                    pass
-                elif self.prevState == self.failedState and self.currentState != self.failedState:
-                    # TODO Stop Altitude Hold
-                    pass
+            # Check for Lost State transition
+            if self.prevState != self.failedState and self.currentState == self.failedState:
+                # TODO Start Altitude Hold
+                pass
+            elif self.prevState == self.failedState and self.currentState != self.failedState:
+                # TODO Stop Altitude Hold
+                pass
 
-                if self.currentState == self.neutralState:
-                    pass # Do nothing
-                elif self.currentState == self.upState:
-                    rotate(rotateUp)
-                elif self.currentState == self.downState:
-                    rotate(rotateDown)
-                elif self.currentState == self.leftState:
-                    #rotate(rotateLeft)
-                    pass
-                elif self.currentState == self.rightState:
-                    #rotate(rotateRight)
-                    pass
-                
-                self.prevState = self.currentState
+            if self.currentState == self.neutralState:
+                pass # Do nothing
+            elif self.currentState == self.upState:
+                self.rotate(self.rotateUp)
+            elif self.currentState == self.downState:
+                self.rotate(self.rotateDown)
+            elif self.currentState == self.leftState:
+                #self.rotate(self.rotateLeft)
+                pass
+            elif self.currentState == self.rightState:
+                #self.rotate(self.rotateRight)
+                pass
+            
+            self.prevState = self.currentState
+            print("Current State: " + str(self.currentState) )
 
 def main():
+    """
     try:
         # Init Node
         rospy.init_node('eyebrow_control')
@@ -154,6 +162,11 @@ def main():
     except rospy.ServiceExeption, e:
         pass
         # Shutdown here?
+    """
 
+    eyebrowMachine = stateMachine()
+    while(True): # TODO change to if no ROS exception
+        eyebrowMachine.loop()
+      
 if __name__=="__main__":
     main()
