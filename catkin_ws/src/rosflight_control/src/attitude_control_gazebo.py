@@ -139,7 +139,7 @@ def attitudeSet_listener(attitudeSet_data):
     global enable
     enable = attitudeSet_data.enable
     global attitudeSetpoint
-    attitudeSetpoint = attitudeSet_data.quaternion
+    attitudeSetpoint = quaternion.as_quat_array(attitudeSet_data.quaternion)
 
 if __name__ == '__main__':
     try:
