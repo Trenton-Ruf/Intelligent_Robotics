@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 
+from simple_pid import PID
+import math
+import time
+import numpy as np
+import quaternion # using version 2020.11.2.17.0.49 
+                #numba dependency installed with "sudo apt install python-numba"
+
 import rospy
+import rospkg
 from rosflight_msgs.msg import Command, Attitude
 from nav_msgs.msg import Odometry
-from simple_pid import PID
-import numpy as np
-import math
-import quaternion # using version 2020.11.2.17.0.49 
-                    #numba dependency installed with "sudo apt install python-numba"
-import rospkg
-
 from rosflight_control.msg import attitudeSet
-import time
+from gazebo_msgs.msg import ModelState
+from gazebo_msgs.srv import SetModelState
+from gazebo_msgs.srv import GetModelState
 
 attitude        = None
 aeleronRate     = None
@@ -48,6 +51,30 @@ msg.mode = Command.MODE_PASS_THROUGH
 publisher = rospy.Publisher("/fixedwing/command",Command,queue_size=1)
 
 startTime = time.time()
+
+def resetState():
+    state_msg = ModelState()
+    state_msg.model_name = 'fixedwing'
+    state_msg.pose.position.x = 0
+    state_msg.pose.position.y = 0
+    state_msg.pose.position.z = 20
+    state_msg.pose.orientation.x = 0
+    state_msg.pose.orientation.y = 0.131
+    state_msg.pose.orientation.z = 0
+    state_msg.pose.orientation.w = 0.991
+
+    state_msg.twist.linear.x = 8
+
+    rospy.wait_for_service('/gazebo/set_model_state')
+
+    rospy.loginfo("Resetting State")
+    
+    try:
+        set_state = rospy.ServiceProxy('/gazebo/set_model_state',SetModelState)
+        resp = set_state(state_msg)
+    except rospy.ServiceExeption, e:
+        print("Service call failed: %s" % e)
+
 
 def attitudeControl(attitudeData):
 
@@ -107,15 +134,12 @@ def attitudeControl(attitudeData):
                     )
     """
 
-    #findUltimateGain(elevatorPID,attitudeError.y)
-    testZieglerNichols(elevatorPID,attitudeError.y,0.0601,0.218)
 
-
-def attitudeSet_listener(altitudeSet_data):
+def attitudeSet_listener(attitudeSet_data):
     global enable
-    enable = altitudeSet_data.enable
+    enable = attitudeSet_data.enable
     global attitudeSetpoint
-    attitudeSetpoint = altitudeSet_data.quaternion
+    attitudeSetpoint = attitudeSet_data.quaternion
 
 if __name__ == '__main__':
     try:
@@ -133,6 +157,5 @@ if __name__ == '__main__':
         resetState()
         rospy.spin()
 
-    #except rospy.ROSInterruptException:
-    except rospy.ServiceExeption, e:
+    except rospy.ROSInterruptException:
         pass
