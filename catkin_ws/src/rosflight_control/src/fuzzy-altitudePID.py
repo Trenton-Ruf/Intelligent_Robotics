@@ -6,7 +6,7 @@ from simple_pid import PID
 import numpy as np
 import skfuzzy.control as ctrl
 import time
-from rosflight_control.srv import controller_set
+from rosflight_control.srv import altitude_set
 
 altitude = None
 altitudeSetpoint = 5
@@ -337,7 +337,7 @@ if __name__ == '__main__':
         rospy.Subscriber("/baro",Barometer, altitudePID ) # bypass filter
 
         # Create service 
-        service = rospy.Service("altHold_set" , controller_set, getControl)
+        service = rospy.Service("altHold_set" , altitude_set, getControl)
 
         rospy.spin()
 

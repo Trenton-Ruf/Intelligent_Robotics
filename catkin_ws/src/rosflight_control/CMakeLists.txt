@@ -57,7 +57,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
-   controller_set.srv
+   altitude_set.srv
+   attitude_set.srv
  )
 
 ## Generate actions in the 'action' folder
