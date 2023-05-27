@@ -59,6 +59,9 @@ class stateMachine():
         self.rotateLeft = eulerToQuat(- thetaRot, 0, 0)
         self.rotateRight = eulerToQuat(thetaRot, 0, 0)
 
+        # Loop frequency
+        self.hz = 10
+
         # Initialize socket listener
         # Used for recieving eyebrow states from a client
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -67,6 +70,7 @@ class stateMachine():
         self.s.bind(("192.168.106.114", 8745))
         self.s.listen(1)
         self.socketConnected = False
+        self.s.settimeout( 2/self.hz ) # 2x the loop period 
 
         # attitudSet Publisher
         self.attitudeSetPub = rospy.Publisher('attitudeSet', attitudeSet, queue_size=1)
@@ -76,11 +80,26 @@ class stateMachine():
 
 
     def connectSocket(self):
-        self.clientsocket, self.address = self.s.accept()
-        print("Connection from " + str(self.address) +" established")
-        msg ="Connected to eyebrow_control server" 
-        self.clientsocket.send(msg.encode("utf-8"))
-        self.socketConnected = True
+        try:
+            self.clientsocket, self.address = self.s.accept()
+            rospy.loginfo("Connection from " + str(self.address) +" established")
+            msg ="Connected to eyebrow_control server" 
+            self.clientsocket.send(msg.encode("utf-8"))
+            self.socketConnected = True
+            return True
+        except socket.error:
+            self.socketConnected = False
+            self.currentState = self.failedState
+            return False
+
+
+    def recieveSocket(self):
+        try:
+            msg = self.clientsocket.recv(64)
+            self.currentState = self.stateSocketDict[ msg.decode("utf-8") ]
+        except:
+            self.socketConnected = False
+            self.currentState = self.failedState
     
 
     def setOrientation(self, attitudeData):
@@ -101,17 +120,18 @@ class stateMachine():
 
     def loop(self):
         # Loop Rate
-        rate = rospy.Rate(10) #hz
+        rate = rospy.Rate(self.hz)
+
+        # Initialize attitudeSet message
+        self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.orientation) #[0]
 
         while not rospy.is_shutdown():
 
-            # TODO socket timeouts
             if not self.socketConnected:
-                self.connectSocket()
-                self.currentState = self.failedState
+                if self.connectSocket():
+                    continue
             else:
-                msg = self.clientsocket.recv(64)
-                self.currentState = self.stateSocketDict[ msg.decode("utf-8") ]
+                self.recieveSocket()
 
             # Check for Lost State
             if self.currentState == self.failedState:
@@ -135,10 +155,10 @@ class stateMachine():
                     #self.rotate(self.rotateRight)
                     pass
                 
-                self.attitudeSetMsg.quaternion = self.orientation
                 self.prevState = self.currentState
+                self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.orientation) #[0]
 
-            print("Current State: " + str(self.currentState) )
+            rospy.loginfo("Current State: " + str(self.currentState) )
 
             # Publish Topics
             self.attitudeSetPub.publish(self.attitudeSetMsg)
@@ -166,7 +186,7 @@ def main():
 
         eyebrowMachine.loop()
       
-    except rospy.ServiceExeption, e:
+    except rospy.ROSInterruptException:
         # Shutdown here?
         pass
       
