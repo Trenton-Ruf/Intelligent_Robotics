@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import socket
-import time
 import math
 import numpy as np
 import quaternion
@@ -10,6 +9,7 @@ import quaternion
 import rospy
 from rosflight_msgs.msg import Command, Attitude
 from nav_msgs.msg import Odometry
+from rosflight_control.msg import altitudeSet, attitudeSet
 
 # Convert euler anges for roll, pitch, and yaw into a quaternion.
 def eulerToQuat(roll, pitch, yaw):
@@ -24,7 +24,7 @@ def eulerToQuat(roll, pitch, yaw):
     # print(w + " " + x + " " + y + " " + z)
     return np.quaternion(w,x,y,z)
 
-
+  
 class stateMachine():
     # Create States
     neutralState    = 0
@@ -46,12 +46,7 @@ class stateMachine():
         # Set inital State
         self.initialState = self.neutralState 
         self.currentState = self.initialState
-        
         self.prevState = None
-
-        # Timing
-        self.rotationInterval = 0.1 # Seconds
-        self.startTime = time.time() # Maybe convert to time.time_ns() for precision
 
         self.orientation = None
         self.setpoint = None
@@ -73,6 +68,12 @@ class stateMachine():
         self.s.listen(1)
         self.socketConnected = False
 
+        # attitudSet Publisher
+        self.attitudeSetPub = rospy.Publisher('attitudeSet', attitudeSet, queue_size=1)
+        self.attitudeSetMsg = attitudeSet()
+        self.attitudeSetMsg.enable = False
+        self.attitudeSetMsg.quaternion = self.orientation
+
 
     def connectSocket(self):
         self.clientsocket, self.address = self.s.accept()
@@ -88,54 +89,64 @@ class stateMachine():
                                         attitudeData.pose.pose.orientation.y,
                                         attitudeData.pose.pose.orientation.z) 
 
+
     def stateTransition(self, newState):
         self.currentState = newState
 
 
-        def rotate(self, rotation):
-            # Quaternion rotation p'= q*p*q^-1
-            self.setpoint = rotation * self.setpoint * np.conjugate(rotation)
+    def rotate(self, rotation):
+        # Quaternion rotation p'= q*p*q^-1
+        self.setpoint = rotation * self.setpoint * np.conjugate(rotation)
             
 
     def loop(self):
-        # TODO socket timeouts
-        if not self.socketConnected:
-            self.connectSocket()
-            self.currentState = self.failedState
-        else:
-            msg = self.clientsocket.recv(64)
-            self.currentState = self.stateSocketDict[ msg.decode("utf-8") ]
+        # Loop Rate
+        rate = rospy.Rate(10) #hz
 
-        if (self.startTime + self.rotationInterval <= time.time()):
-            # Reset timer
-            self.startTime = time.time()
+        while not rospy.is_shutdown():
 
-            # Check for Lost State transition
-            if self.prevState != self.failedState and self.currentState == self.failedState:
+            # TODO socket timeouts
+            if not self.socketConnected:
+                self.connectSocket()
+                self.currentState = self.failedState
+            else:
+                msg = self.clientsocket.recv(64)
+                self.currentState = self.stateSocketDict[ msg.decode("utf-8") ]
+
+            # Check for Lost State
+            if self.currentState == self.failedState:
                 # TODO Start Altitude Hold
-                pass
-            elif self.prevState == self.failedState and self.currentState != self.failedState:
-                # TODO Stop Altitude Hold
-                pass
+                self.attitudeSetMsg.enable = False
 
-            if self.currentState == self.neutralState:
-                pass # Do nothing
-            elif self.currentState == self.upState:
-                self.rotate(self.rotateUp)
-            elif self.currentState == self.downState:
-                self.rotate(self.rotateDown)
-            elif self.currentState == self.leftState:
-                #self.rotate(self.rotateLeft)
-                pass
-            elif self.currentState == self.rightState:
-                #self.rotate(self.rotateRight)
-                pass
-            
-            self.prevState = self.currentState
+            else:
+                # TODO Stop Altitude Hold
+                self.attitudeSetMsg.enable = True
+
+                if self.currentState == self.neutralState:
+                    pass # Do nothing
+                elif self.currentState == self.upState:
+                    self.rotate(self.rotateUp)
+                elif self.currentState == self.downState:
+                    self.rotate(self.rotateDown)
+                elif self.currentState == self.leftState:
+                    #self.rotate(self.rotateLeft)
+                    pass
+                elif self.currentState == self.rightState:
+                    #self.rotate(self.rotateRight)
+                    pass
+                
+                self.attitudeSetMsg.quaternion = self.orientation
+                self.prevState = self.currentState
+
             print("Current State: " + str(self.currentState) )
 
+            # Publish Topics
+            self.attitudeSetPub.publish(self.attitudeSetMsg)
+
+            rate.sleep()
+
+
 def main():
-    """
     try:
         # Init Node
         rospy.init_node('eyebrow_control')
@@ -146,27 +157,18 @@ def main():
         # Create attitude listener
         rospy.Subscriber("/fixedwing/truth/NED", Odometry, eyebrowMachine.setOrientation) 
 
-        # Wait for initial orientation
+        # rospy.loginfo("Waiting for initial orientation")
         while(eyebrowMachine.orientation is None):
             pass
 
         # Set the initial setpoint to be the same as the first orientation
         eyebrowMachine.setpoint = eyebrowMachine.orientation 
 
-        # Create attitude setpoint publisher
-        # TODO
-
-        while(True): # TODO change to if no ROS exception
-            eyebrowMachine.loop()
+        eyebrowMachine.loop()
       
     except rospy.ServiceExeption, e:
-        pass
         # Shutdown here?
-    """
-
-    eyebrowMachine = stateMachine()
-    while(True): # TODO change to if no ROS exception
-        eyebrowMachine.loop()
+        pass
       
 if __name__=="__main__":
     main()
