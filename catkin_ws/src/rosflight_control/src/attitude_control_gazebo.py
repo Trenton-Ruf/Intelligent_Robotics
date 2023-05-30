@@ -31,7 +31,7 @@ qU = np.quaternion(1,0,0,0)
 Kp = 1
 
 # create PID controllers
-elevatorPID = PID(0.01,0,0, setpoint=0)
+elevatorPID = PID(0.03606, 0.33083,0, setpoint=0.000983)
 aeleronPID = PID(0,0,0, setpoint=0)
 rudderPID = PID(0,0,0, setpoint=0)
 
@@ -140,6 +140,7 @@ def attitudeSet_listener(attitudeSet_data):
     enable = attitudeSet_data.enable
     global attitudeSetpoint
     attitudeSetpoint = quaternion.as_quat_array(attitudeSet_data.quaternion)
+    rospy.loginfo("Enable: "+ str(enable) + "\nattitudeSetpoint: " + str(attitudeSetpoint))
 
 if __name__ == '__main__':
     try:
@@ -152,7 +153,7 @@ if __name__ == '__main__':
         rospy.Subscriber("/fixedwing/truth/NED", Odometry, attitudeControl)
 
         # Create attitudeSet listener
-        rospy.Subscriber("attitudeSet", attitudeSet, attitudeSet_listener)
+        rospy.Subscriber("/attitudeSet", attitudeSet, attitudeSet_listener)
 
         resetState()
         rospy.spin()
