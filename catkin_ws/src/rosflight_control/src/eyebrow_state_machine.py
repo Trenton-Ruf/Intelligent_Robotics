@@ -21,7 +21,7 @@ def eulerToQuat(roll, pitch, yaw):
         + math.sin(roll/ 2) * math.cos(pitch/ 2) * math.sin(yaw/ 2)
     z = math.cos(roll/ 2) * math.cos(pitch/ 2) * math.sin(yaw/ 2) \
         - math.sin(roll/ 2) * math.sin(pitch/ 2) * math.cos(yaw/ 2)
-    # print(w + " " + x + " " + y + " " + z)
+    rospy.loginfo("Quat " + str(w) + " " + str(x) + " " + str(y) + " " + str(z))
     return np.quaternion(w,x,y,z)
 
   
@@ -60,7 +60,7 @@ class stateMachine():
         self.rotateRight = eulerToQuat(thetaRot, 0, 0)
 
         # Loop frequency
-        self.hz = 10
+        self.hz = 1
 
         # Initialize socket listener
         # Used for recieving eyebrow states from a client
@@ -76,7 +76,7 @@ class stateMachine():
         self.attitudeSetPub = rospy.Publisher('attitudeSet', attitudeSet, queue_size=1)
         self.attitudeSetMsg = attitudeSet()
         self.attitudeSetMsg.enable = False
-        self.attitudeSetMsg.quaternion = self.orientation
+        #self.attitudeSetMsg.quaternion = self.orientation
 
 
     def connectSocket(self):
@@ -90,16 +90,19 @@ class stateMachine():
         except socket.error:
             self.socketConnected = False
             self.currentState = self.failedState
+            rospy.loginfo("connectSocket failed")
             return False
 
 
     def recieveSocket(self):
         try:
-            msg = self.clientsocket.recv(64)
+            msg = self.clientsocket.recv(16)
             self.currentState = self.stateSocketDict[ msg.decode("utf-8") ]
+            rospy.loginfo("Socket mesg: " +  msg)
         except:
-            self.socketConnected = False
+            #self.socketConnected = False
             self.currentState = self.failedState
+            rospy.loginfo("recieveSocket failed")
     
 
     def setOrientation(self, attitudeData):
@@ -109,13 +112,10 @@ class stateMachine():
                                         attitudeData.pose.pose.orientation.z) 
 
 
-    def stateTransition(self, newState):
-        self.currentState = newState
-
-
     def rotate(self, rotation):
         # Quaternion rotation p'= q*p*q^-1
-        self.setpoint = rotation * self.setpoint * np.conjugate(rotation)
+        self.setpoint = rotation * self.setpoint # * np.conjugate(rotation)
+        rospy.loginfo("rotated quat:" + str(self.setpoint))
             
 
     def loop(self):
@@ -123,9 +123,11 @@ class stateMachine():
         rate = rospy.Rate(self.hz)
 
         # Initialize attitudeSet message
-        self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.orientation) #[0]
+        self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint) #[0]
 
         while not rospy.is_shutdown():
+
+            self.prevState = self.currentState
 
             if not self.socketConnected:
                 if self.connectSocket():
@@ -136,7 +138,8 @@ class stateMachine():
             # Check for Lost State
             if self.currentState == self.failedState:
                 # TODO Start Altitude Hold
-                self.attitudeSetMsg.enable = False
+                # self.attitudeSetMsg.enable = False # uncomment when altitude hold implemented
+                pass
 
             else:
                 # TODO Stop Altitude Hold
@@ -155,15 +158,15 @@ class stateMachine():
                     #self.rotate(self.rotateRight)
                     pass
                 
-                self.prevState = self.currentState
-                self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.orientation) #[0]
+                self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint) #[0]
 
             rospy.loginfo("Current State: " + str(self.currentState) )
 
             # Publish Topics
             self.attitudeSetPub.publish(self.attitudeSetMsg)
 
-            rate.sleep()
+            # TODO why rate.sleep crashes. Need new thread?
+            #rate.sleep()
 
 
 def main():
