@@ -333,8 +333,8 @@ if __name__ == '__main__':
         rospy.init_node('altitude_control')
 
         # Create barometer listener
-        #rospy.Subscriber("/baro",Barometer, altimeterFilter) # with filter
-        rospy.Subscriber("/baro",Barometer, altitudePID ) # bypass filter
+        #rospy.Subscriber("/fixedwing/baro",Barometer, altimeterFilter) # with filter
+        rospy.Subscriber("/fixedwing/baro", Barometer, altitudePID ) # bypass filter
 
         # Create altitudeSet listener
         rospy.Subscriber("/atltitudeSet", altitudeSet, altitudeSet_listener)
