@@ -7,8 +7,8 @@ import quaternion
 
 # Ros Includes
 import rospy
-from rosflight_msgs.msg import Command, Attitude
-from nav_msgs.msg import Odometry
+from rosflight_msgs.msg import Command, Attitude, Barometer
+from nav_msgs.msg import Odometry # TODO replace Odometry with Attitude after supplimenting Kalman filter with Magnotometer data
 from rosflight_control.msg import altitudeSet, attitudeSet
 
 # Convert euler anges for roll, pitch, and yaw into a quaternion.
@@ -50,6 +50,8 @@ class stateMachine():
 
         self.orientation = None
         self.setpoint = None
+        self.altitude = None
+
 
         # Initialize rotation quaternions
         degreesRot = 2
@@ -76,7 +78,13 @@ class stateMachine():
         self.attitudeSetPub = rospy.Publisher('attitudeSet', attitudeSet, queue_size=1)
         self.attitudeSetMsg = attitudeSet()
         self.attitudeSetMsg.enable = False
-        #self.attitudeSetMsg.quaternion = self.orientation
+
+        # altitudSet Publisher
+        self.altitudeSetPub = rospy.Publisher('altitudeSet', altitudeSet, queue_size=1)
+        self.altitudeSetMsg = altitudeSet()
+        self.altitudeSetMsg.enable = True
+        
+
 
 
     def connectSocket(self):
@@ -105,6 +113,10 @@ class stateMachine():
             rospy.loginfo("recieveSocket failed")
     
 
+    def setAltitude(self, altitudeData):
+        self.altitude = altitudeData
+
+
     def setOrientation(self, attitudeData):
         self.orientation = np.quaternion(attitudeData.pose.pose.orientation.w,
                                         attitudeData.pose.pose.orientation.x,
@@ -122,12 +134,11 @@ class stateMachine():
         # Loop Rate
         rate = rospy.Rate(self.hz)
 
-        # Initialize attitudeSet message
+        # Initialize messages
         self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint) #[0]
 
         while not rospy.is_shutdown():
 
-            self.prevState = self.currentState
 
             if not self.socketConnected:
                 if self.connectSocket():
@@ -137,13 +148,18 @@ class stateMachine():
 
             # Check for Lost State
             if self.currentState == self.failedState:
-                # TODO Start Altitude Hold
-                # self.attitudeSetMsg.enable = False # uncomment when altitude hold implemented
-                pass
+                # Start Altitude Hold
+                self.attitudeSetMsg.enable = False 
+                self.altitudeSetMsg.enable = True
+                if self.previousState != self.failedState:
+                    # Set the altitude hold to the current altitude
+                    self.altitudeSetMsg.setpoint = self.altitude
+                    pass
 
             else:
-                # TODO Stop Altitude Hold
+                # Stop Altitude Hold
                 self.attitudeSetMsg.enable = True
+                self.altitudeSetMsg.enable = False
 
                 if self.currentState == self.neutralState:
                     pass # Do nothing
@@ -160,10 +176,15 @@ class stateMachine():
                 
                 self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint) #[0]
 
+
             rospy.loginfo("Current State: " + str(self.currentState) )
 
             # Publish Topics
             self.attitudeSetPub.publish(self.attitudeSetMsg)
+            self.altitudeSetPub.publish(self.altitudeSetMsg)
+
+            # Set previous State
+            self.prevState = self.currentState
 
             # TODO why rate.sleep crashes. Need new thread?
             #rate.sleep()
@@ -176,6 +197,9 @@ def main():
        
         # Create state machine class
         eyebrowMachine = stateMachine()
+
+        # Create barometer listener
+        rospy.Subscriber("/fixedwing/baro", Barometer.altitude, eyebrowMachine.setAltitude) 
 
         # Create attitude listener
         rospy.Subscriber("/fixedwing/truth/NED", Odometry, eyebrowMachine.setOrientation) 
