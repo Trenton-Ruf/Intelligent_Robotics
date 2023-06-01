@@ -4,14 +4,16 @@ import socket
 import math
 import numpy as np
 import quaternion
+import time
 
 # Ros Includes
 import rospy
 from rosflight_msgs.msg import Command, Attitude, Barometer
-from nav_msgs.msg import Odometry # TODO replace Odometry with Attitude after supplimenting Kalman filter with Magnotometer data
+# TODO replace Odometry with Attitude after supplimenting Kalman filter with Magnotometer data
+from nav_msgs.msg import Odometry 
 from rosflight_control.msg import altitudeSet, attitudeSet
 
-# Convert euler anges for roll, pitch, and yaw into a quaternion.
+# Convert euler angles for roll, pitch, and yaw into a quaternion.
 def eulerToQuat(roll, pitch, yaw):
     w = math.cos(roll/ 2) * math.cos(pitch/ 2) * math.cos(yaw/ 2) \
         + math.sin(roll/ 2) * math.sin(pitch/ 2) * math.sin(yaw/ 2)
@@ -62,7 +64,9 @@ class stateMachine():
         self.rotateRight = eulerToQuat(thetaRot, 0, 0)
 
         # Loop frequency
-        self.hz = 1
+        self.hz = 10
+        self.period = 1 / hz
+        self.startTime = time.time()
 
         # Initialize socket listener
         # Used for recieving eyebrow states from a client
@@ -72,7 +76,7 @@ class stateMachine():
         self.s.bind(("192.168.106.114", 8745))
         self.s.listen(1)
         self.socketConnected = False
-        self.s.settimeout( 2/self.hz ) # 2x the loop period 
+        self.s.settimeout( 2 * self.period )
 
         # attitudSet Publisher
         self.attitudeSetPub = rospy.Publisher('attitudeSet', attitudeSet, queue_size=1)
@@ -131,14 +135,11 @@ class stateMachine():
             
 
     def loop(self):
-        # Loop Rate
-        rate = rospy.Rate(self.hz)
 
         # Initialize messages
         self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint) #[0]
 
         while not rospy.is_shutdown():
-
 
             if not self.socketConnected:
                 if self.connectSocket():
@@ -146,49 +147,48 @@ class stateMachine():
             else:
                 self.recieveSocket()
 
-            # Check for Lost State
-            if self.currentState == self.failedState:
-                # Start Altitude Hold
-                self.attitudeSetMsg.enable = False 
-                self.altitudeSetMsg.enable = True
-                if self.previousState != self.failedState:
-                    # Set the altitude hold to the current altitude
-                    self.altitudeSetMsg.setpoint = self.altitude
-                    pass
+            elapsedTime = time.time() - self.startTime
+            if elapsedTime >= self.period:
+                # Reset Timer
+                self.startTime = time.time()
 
-            else:
-                # Stop Altitude Hold
-                self.attitudeSetMsg.enable = True
-                self.altitudeSetMsg.enable = False
+                # Check for Lost State
+                if self.currentState == self.failedState:
+                    # Start Altitude Hold
+                    self.attitudeSetMsg.enable = False 
+                    self.altitudeSetMsg.enable = True
+                    if self.previousState != self.failedState:
+                        # Set the altitude hold to the current altitude
+                        self.altitudeSetMsg.setpoint = self.altitude
 
-                if self.currentState == self.neutralState:
-                    pass # Do nothing
-                elif self.currentState == self.upState:
-                    self.rotate(self.rotateUp)
-                elif self.currentState == self.downState:
-                    self.rotate(self.rotateDown)
-                elif self.currentState == self.leftState:
-                    #self.rotate(self.rotateLeft)
-                    pass
-                elif self.currentState == self.rightState:
-                    #self.rotate(self.rotateRight)
-                    pass
-                
-                self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint) #[0]
+                else:
+                    # Stop Altitude Hold
+                    self.attitudeSetMsg.enable = True
+                    self.altitudeSetMsg.enable = False
 
+                    if self.currentState == self.neutralState:
+                        pass # Do nothing
+                    elif self.currentState == self.upState:
+                        self.rotate(self.rotateUp)
+                    elif self.currentState == self.downState:
+                        self.rotate(self.rotateDown)
+                    elif self.currentState == self.leftState:
+                        #self.rotate(self.rotateLeft)
+                        pass
+                    elif self.currentState == self.rightState:
+                        #self.rotate(self.rotateRight)
+                        pass
+                    
+                    self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint)
 
-            rospy.loginfo("Current State: " + str(self.currentState) )
+                rospy.loginfo("Current State: " + str(self.currentState) )
 
-            # Publish Topics
-            self.attitudeSetPub.publish(self.attitudeSetMsg)
-            self.altitudeSetPub.publish(self.altitudeSetMsg)
+                # Publish Topics
+                self.attitudeSetPub.publish(self.attitudeSetMsg)
+                self.altitudeSetPub.publish(self.altitudeSetMsg)
 
-            # Set previous State
-            self.prevState = self.currentState
-
-            # TODO why rate.sleep crashes. Need new thread?
-            #rate.sleep()
-
+                # Set previous State
+                self.prevState = self.currentState
 
 def main():
     try:
@@ -204,17 +204,19 @@ def main():
         # Create attitude listener
         rospy.Subscriber("/fixedwing/truth/NED", Odometry, eyebrowMachine.setOrientation) 
 
-        # rospy.loginfo("Waiting for initial orientation")
+        """
+        rospy.loginfo("Waiting for initial orientation")
         while(eyebrowMachine.orientation is None):
             pass
 
         # Set the initial setpoint to be the same as the first orientation
         eyebrowMachine.setpoint = eyebrowMachine.orientation 
+        """
 
         eyebrowMachine.loop()
       
     except rospy.ROSInterruptException:
-        # Shutdown here?
+        # Print Exception?
         pass
       
 if __name__=="__main__":
