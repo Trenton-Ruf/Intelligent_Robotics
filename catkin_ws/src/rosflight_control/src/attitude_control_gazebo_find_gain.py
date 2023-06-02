@@ -15,7 +15,7 @@ from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState
 from gazebo_msgs.srv import GetModelState
 
-from rosflight_control.srv import controller_set
+from rosflight_control.msg import attitudeSet
 import time
 import matplotlib.pyplot as plt
 
@@ -37,13 +37,8 @@ qU = np.quaternion(1,0,0,0)
 Kp = 1
 
 # create PID controllers
-#elevatorPID = PID(0.055,0,0, setpoint=0)
-elevatorPID = PID(0.01,0,0, setpoint=0) # getting integral
-
-#aeleronPID = PID(0.1,0,0, setpoint=0)
-#rudderPID = PID(0.1,0,0, setpoint=0)
-
-aeleronPID = PID(0,0,0, setpoint=0)
+elevatorPID = PID(0.03606, 0.33083,0, setpoint=0.000983) # STABLE
+aeleronPID = PID(0.1,0,0, setpoint=0)
 rudderPID = PID(0,0,0, setpoint=0)
 
 elevatorPID.output_limits = (-1,1) # Maximum elevator Deflections
@@ -76,15 +71,14 @@ def getFixedwingHeight():
         print("Service call failed: %s" % e)
 
 
-
 def resetState():
     state_msg = ModelState()
     state_msg.model_name = 'fixedwing'
     state_msg.pose.position.x = 0
     state_msg.pose.position.y = 0
     state_msg.pose.position.z = 20
-    state_msg.pose.orientation.x = 0
-    state_msg.pose.orientation.y = 0.131
+    state_msg.pose.orientation.x = 0.131 
+    state_msg.pose.orientation.y = 0
     state_msg.pose.orientation.z = 0
     state_msg.pose.orientation.w = 0.991
 
@@ -121,7 +115,7 @@ def plotPID(x,y,gain):
     plt.title(title)
     plt.xlabel('Time')
     plt.legend()
-    #plt.savefig(str(gain)+'_PID.pdf')
+    plt.savefig(str(gain) + '_PID.pdf')
     plt.show()
     plt.clf()
 
@@ -169,7 +163,6 @@ def findHeightDeviation(_x,_y):
             deviation += abs(avg_depth - depth)
         return deviation * 100 * (avg_height - avg_depth)
     return deviation
-
 
 
 ult_x = []
@@ -286,10 +279,6 @@ def testZieglerNichols(pid,error,ult_gain,ult_period):
 def attitudeControl(attitudeData):
 
     global attitudeSetpoint
-    global enable
-
-    if not enable:
-        return;
 
     # Get measured attitude as quaternion
     attitudeMeasured = np.quaternion(attitudeData.pose.pose.orientation.w,
@@ -342,15 +331,10 @@ def attitudeControl(attitudeData):
     """
 
     #findUltimateGain(elevatorPID,attitudeError.y)
-    testZieglerNichols(elevatorPID,attitudeError.y,0.0601,0.218)
+    #testZieglerNichols(elevatorPID,attitudeError.y,0.0601,0.218)
 
-
-def getControl(request):
-    global attitudeSetpoint
-    global enable
-    attitudeSetpoint = request.setPoint
-    enable = request.enable
-    return []
+    findUltimateGain( aeleronPID, attitudeError.x )
+    #testZieglerNichols( aeleronPID, attitudeError.x , , )
 
 if __name__ == '__main__':
     try:
@@ -362,13 +346,8 @@ if __name__ == '__main__':
         #rospy.Subscriber("/fixedwing/attitude", Attitude, attitudeControl)
         rospy.Subscriber("/fixedwing/truth/NED", Odometry, attitudeControl)
 
-
-        # Create service 
-        service = rospy.Service("attitude_set" , controller_set, getControl)
-
         resetState()
         rospy.spin()
 
-    #except rospy.ROSInterruptException:
-    except rospy.ServiceExeption, e:
+    except rospy.ROSInterruptException:
         pass
