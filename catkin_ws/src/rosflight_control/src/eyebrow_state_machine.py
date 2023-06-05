@@ -89,8 +89,6 @@ class stateMachine():
         self.altitudeSetMsg.enable = True
         
 
-
-
     def connectSocket(self):
         try:
             self.clientsocket, self.address = self.s.accept()
@@ -129,15 +127,14 @@ class stateMachine():
 
 
     def rotate(self, rotation):
-        # Quaternion rotation p'= q*p*q^-1
-        self.setpoint = rotation * self.setpoint # * np.conjugate(rotation)
+        self.setpoint = rotation * self.setpoint 
         rospy.loginfo("rotated quat:" + str(self.setpoint))
             
 
     def loop(self):
 
         # Initialize messages
-        self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint) #[0]
+        self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint)
 
         while not rospy.is_shutdown():
 
@@ -152,7 +149,6 @@ class stateMachine():
                 # Reset Timer
                 self.startTime = time.time()
 
-                # Check for Lost State
                 if self.currentState == self.failedState:
                     # Start Altitude Hold
                     self.attitudeSetMsg.enable = False 
@@ -165,6 +161,9 @@ class stateMachine():
                     # Stop Altitude Hold
                     self.attitudeSetMsg.enable = True
                     self.altitudeSetMsg.enable = False
+                        if self.previousState == self.failedState:
+                            # Set the attitude setpoint to the current orientation
+                            self.setpoint = self.orientation
 
                     if self.currentState == self.neutralState:
                         pass # Do nothing
@@ -173,11 +172,9 @@ class stateMachine():
                     elif self.currentState == self.downState:
                         self.rotate(self.rotateDown)
                     elif self.currentState == self.leftState:
-                        #self.rotate(self.rotateLeft)
-                        pass
+                        self.rotate(self.rotateLeft)
                     elif self.currentState == self.rightState:
-                        #self.rotate(self.rotateRight)
-                        pass
+                        self.rotate(self.rotateRight)
                     
                     self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint)
 
