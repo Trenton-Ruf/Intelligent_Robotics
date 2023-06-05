@@ -38,7 +38,7 @@ Kp = 1
 
 # create PID controllers
 elevatorPID = PID(0.03606, 0.33083,0, setpoint=0.000983) # STABLE
-aeleronPID = PID(0.1,0,0, setpoint=0)
+aeleronPID = PID(0.03858, 0.52979, 0.00070, setpoint=0)
 rudderPID = PID(0,0,0, setpoint=0)
 
 elevatorPID.output_limits = (-1,1) # Maximum elevator Deflections
@@ -77,9 +77,9 @@ def resetState():
     state_msg.pose.position.x = 0
     state_msg.pose.position.y = 0
     state_msg.pose.position.z = 20
-    state_msg.pose.orientation.x = 0.131 
+    state_msg.pose.orientation.x = 0 
     state_msg.pose.orientation.y = 0
-    state_msg.pose.orientation.z = 0
+    state_msg.pose.orientation.z = 0.131
     state_msg.pose.orientation.w = 0.991
 
     state_msg.twist.linear.x = 8
@@ -116,7 +116,7 @@ def plotPID(x,y,gain):
     plt.xlabel('Time')
     plt.legend()
     plt.savefig(str(gain) + '_PID.pdf')
-    plt.show()
+    #plt.show() # Uncomment for testing
     plt.clf()
 
 
@@ -171,11 +171,11 @@ y=[]
 x=[]
 best_gain = -1
 old_best_gain = -1
-inc_gain = 0.01
-curr_gain = 0.01
-target_gain = 0.1
+inc_gain = 0.10
+curr_gain = 0.10
+target_gain = 1.0
 precision = 5 # decimal points of precision
-precision_count = 3
+precision_count = 1
 trial_duration = 60
 def findUltimateGain(pid,error):
     global best_gain
@@ -333,8 +333,12 @@ def attitudeControl(attitudeData):
     #findUltimateGain(elevatorPID,attitudeError.y)
     #testZieglerNichols(elevatorPID,attitudeError.y,0.0601,0.218)
 
-    findUltimateGain( aeleronPID, attitudeError.x )
-    #testZieglerNichols( aeleronPID, attitudeError.x , , )
+    #findUltimateGain( aeleronPID, attitudeError.x )
+    #testZieglerNichols( aeleronPID, attitudeError.x , 0.0643, 0.145642573394 )
+
+    #findUltimateGain( rudderPID, attitudeError.z )
+    testZieglerNichols( rudderPID, attitudeError.z ,0.7219 ,0.158333940709)
+
 
 if __name__ == '__main__':
     try:
