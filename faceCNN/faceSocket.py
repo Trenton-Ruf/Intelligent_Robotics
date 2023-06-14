@@ -111,7 +111,9 @@ def cropDetection(image_input,detection):
 def checkExpression(img,model):
     #norm = cv2.normalize(img, 0, 1, cv2.NORM_MINMAX)
     #norm = cv2.normalize(img, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-    prediction = model.predict(np.expand_dims(img,axis=0))
+    # convert to greyscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    prediction = model.predict(np.expand_dims(gray,axis=0))
     expressions=['neutral','up','down','left','right']
     expression = expressions[np.argmax(prediction)]
     print(expression)
@@ -120,9 +122,10 @@ def checkExpression(img,model):
 model = load_model("./faceModel")
 
 # Socket connection initialization
+print("\nStarting Socket Connection")
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(("192.168.106.114", 8745))
-msg = s.recv(64)
+msg = s.recv(16)
 print(msg.decode("utf-8"))
 
 # For webcam input:

@@ -110,7 +110,9 @@ def cropDetection(image_input,detection):
 def checkExpression(img,model):
     #norm = cv2.normalize(img, 0, 1, cv2.NORM_MINMAX)
     #norm = cv2.normalize(img, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-    prediction = model.predict(np.expand_dims(img,axis=0))
+    # convert to greyscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    prediction = model.predict(np.expand_dims(gray,axis=0))
     expressions=['neutral','up','down','left','right']
     expression = expressions[np.argmax(prediction)]
     print(expression)
