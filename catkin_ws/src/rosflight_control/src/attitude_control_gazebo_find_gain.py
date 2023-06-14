@@ -37,7 +37,7 @@ qU = np.quaternion(1,0,0,0)
 Kp = 1
 
 # create PID controllers
-elevatorPID = PID(0.03606, 0.33083,0, setpoint=0.000983) # STABLE
+elevatorPID = PID(0.03606, 0.33083,0.000983, setpoint=0) # STABLE
 aeleronPID = PID(0.03858, 0.52979, 0.00070, setpoint=0)
 rudderPID = PID(0,0,0, setpoint=0)
 

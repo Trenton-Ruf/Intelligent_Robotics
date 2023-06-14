@@ -48,7 +48,7 @@ class stateMachine():
         # Set inital State
         self.initialState = self.neutralState 
         self.currentState = self.initialState
-        self.prevState = None
+        self.previousState = None
 
         self.orientation = None
         self.setpoint = None
@@ -65,7 +65,7 @@ class stateMachine():
 
         # Loop frequency
         self.hz = 10
-        self.period = 1 / hz
+        self.period = 1 / self.hz
         self.startTime = time.time()
 
         # Initialize socket listener
@@ -116,7 +116,7 @@ class stateMachine():
     
 
     def setAltitude(self, altitudeData):
-        self.altitude = altitudeData
+        self.altitude = altitudeData.altitude
 
 
     def setOrientation(self, attitudeData):
@@ -135,6 +135,7 @@ class stateMachine():
 
         # Initialize messages
         self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint)
+        self.altitudeSetMsg.setPoint = float(self.altitude)
 
         while not rospy.is_shutdown():
 
@@ -155,15 +156,15 @@ class stateMachine():
                     self.altitudeSetMsg.enable = True
                     if self.previousState != self.failedState:
                         # Set the altitude hold to the current altitude
-                        self.altitudeSetMsg.setpoint = self.altitude
+                        self.altitudeSetMsg.setPoint = float(self.altitude)
 
                 else:
                     # Stop Altitude Hold
                     self.attitudeSetMsg.enable = True
                     self.altitudeSetMsg.enable = False
-                        if self.previousState == self.failedState:
-                            # Set the attitude setpoint to the current orientation
-                            self.setpoint = self.orientation
+                    if self.previousState == self.failedState:
+                        # Set the attitude setpoint to the current orientation
+                        self.setpoint = self.orientation
 
                     if self.currentState == self.neutralState:
                         pass # Do nothing
@@ -179,13 +180,12 @@ class stateMachine():
                     self.attitudeSetMsg.quaternion = quaternion.as_float_array(self.setpoint)
 
                 rospy.loginfo("Current State: " + str(self.currentState) )
-
                 # Publish Topics
                 self.attitudeSetPub.publish(self.attitudeSetMsg)
                 self.altitudeSetPub.publish(self.altitudeSetMsg)
 
                 # Set previous State
-                self.prevState = self.currentState
+                self.previousState = self.currentState
 
 def main():
     try:
@@ -196,19 +196,17 @@ def main():
         eyebrowMachine = stateMachine()
 
         # Create barometer listener
-        rospy.Subscriber("/fixedwing/baro", Barometer.altitude, eyebrowMachine.setAltitude) 
+        rospy.Subscriber("/fixedwing/baro", Barometer, eyebrowMachine.setAltitude) 
 
         # Create attitude listener
         rospy.Subscriber("/fixedwing/truth/NED", Odometry, eyebrowMachine.setOrientation) 
 
-        """
-        rospy.loginfo("Waiting for initial orientation")
-        while(eyebrowMachine.orientation is None):
+        rospy.loginfo("Waiting for initial orientation and altitude")
+        while(eyebrowMachine.orientation is None or eyebrowMachine.altitude is None):
             pass
 
         # Set the initial setpoint to be the same as the first orientation
         eyebrowMachine.setpoint = eyebrowMachine.orientation 
-        """
 
         eyebrowMachine.loop()
       

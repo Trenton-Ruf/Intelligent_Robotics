@@ -31,9 +31,9 @@ qU = np.quaternion(1,0,0,0)
 Kp = 1
 
 # create PID controllers
-elevatorPID = PID(0.03606, 0.33083,0, setpoint=0.000983)
-aeleronPID = PID(0,0,0, setpoint=0)
-rudderPID = PID(0,0,0, setpoint=0)
+elevatorPID = PID(0.03606, 0.33083,0.000983, setpoint=0)
+aeleronPID = PID(0.03858, 0.52979, 0.00070, setpoint=0)
+rudderPID = PID(0.43314, 5.47122,0.008573, setpoint=0)
 
 elevatorPID.output_limits = (-1,1) # Maximum elevator Deflections
 aeleronPID.output_limits = (-1,1) # Maximum aeleron Deflections
@@ -137,7 +137,8 @@ def attitudeControl(attitudeData):
 
 def attitudeSet_listener(attitudeSet_data):
     global enable
-    enable = attitudeSet_data.enable
+    # Enable always true for debugging
+    #enable = attitudeSet_data.enable
     global attitudeSetpoint
     attitudeSetpoint = quaternion.as_quat_array(attitudeSet_data.quaternion)
     rospy.loginfo("Enable: "+ str(enable) + "\nattitudeSetpoint: " + str(attitudeSetpoint))

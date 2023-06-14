@@ -6,10 +6,10 @@ from simple_pid import PID
 import numpy as np
 import skfuzzy.control as ctrl
 import time
-from rosflight_control.msg import attitudeSet
+from rosflight_control.msg import altitudeSet
 
 altitude = None
-altitudeSetpoint = 5
+altitudeSetpoint = 5.
 enable = True
 
 # create PID controller
@@ -23,8 +23,9 @@ lastPidError = 0
 
 # Create Message Structure
 msg = Command()
-# need to ignore Aeileron, Rudder, and Throttle command outputs.
-msg.ignore = Command.IGNORE_X | Command.IGNORE_Z | Command.IGNORE_F 
+# need to ignore Aeileron, Rudder
+msg.ignore = Command.IGNORE_X | Command.IGNORE_Z
+msg.F = 0.7
 msg.mode = Command.MODE_PASS_THROUGH 
 
 # Create publisher
@@ -277,6 +278,7 @@ def altitudePID(baro):
     rospy.loginfo("enable:"+ str(enable) + " altitudeSetpoint: "+ str(altitudeSetpoint))
 
     # Do nothing if disabled
+    global enable
     if not enable:
         return
 
@@ -320,24 +322,25 @@ def altitudePID(baro):
                     " Delta:"+str(round(pidDelta))
                     )
 
-def altitudeSet_listener(altitudeSet_data):
+def altitudeSet_listener(altitudeSet):
     global enable
-    enable = altitudeSet_data.enable
     global altitudeSetpoint
-    altitudeSetpoint = altitudeSet_data
-    rospy.loginfo("Enable: "+ str(enable) + "\naltitudeSetpoint: " + str(altitudeSetpoint))
+    enable = altitudeSet.enable
+    rospy.loginfo("Raw Enable: "+ str(altitudeSet.enable) )
+    altitudeSetpoint = altitudeSet.setPoint
 
 if __name__ == '__main__':
     try:
         # Init Node
         rospy.init_node('altitude_control')
 
+        # Create altitudeSet listener
+        rospy.Subscriber("/altitudeSet", altitudeSet, altitudeSet_listener)
+
         # Create barometer listener
         #rospy.Subscriber("/fixedwing/baro",Barometer, altimeterFilter) # with filter
         rospy.Subscriber("/fixedwing/baro", Barometer, altitudePID ) # bypass filter
 
-        # Create altitudeSet listener
-        rospy.Subscriber("/atltitudeSet", altitudeSet, altitudeSet_listener)
 
         rospy.spin()
 
