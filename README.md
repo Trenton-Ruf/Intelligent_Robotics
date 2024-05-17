@@ -4,8 +4,8 @@ Skip to the 3min mark to see the good stuff.
 
 Eyebrow controlled simulated airplane for a school project.
 Python ROS controlls sent to the Gazebo Physics Simulator.
-Experimental fuzzy quaternion controls for and CNN eyebrow detection.
-Build on top of ROSflight.
+Experimental fuzzy quaternion controls and CNN eyebrow detection.
+Built on top of ROSflight.
 
 ## More Details can be found in the following reports.
 
